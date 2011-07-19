@@ -26,7 +26,4 @@
   <p class="error">${_("you are logged in. go use the site!")}</p>
 %else:
   ${login_form(register = True, user = thing.user_reg, dest = thing.dest)}
-  <script type="text/javascript">
-    $.request("new_captcha");
-  </script>
 %endif

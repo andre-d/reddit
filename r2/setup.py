@@ -32,6 +32,7 @@ import os
 import fnmatch
 
 commands = {"build_ext": build_ext}
+
 try:
     from babel.messages import frontend as babel
     commands.update({
@@ -77,7 +78,7 @@ setup(
         "pycountry",
         "pycassa==1.1.0",
         "PIL",
-        "pycaptcha",
+        "recaptcha-client",
         "amqplib",
         "pylibmc==1.2.1-dev",
     ],

@@ -20,6 +20,6 @@
 ## CondeNet, Inc. All Rights Reserved.
 ################################################################################
 
-<%namespace file="captcha.html" import="rounded_captcha"/>
+<%namespace file="captcha.html" import="captchagen"/>
 
-${rounded_captcha()}
+${captchagen()}

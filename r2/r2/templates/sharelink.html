@@ -84,7 +84,11 @@
         </td>
       </tr>
       %if thing.captcha:
-        ${captchagen('', tabulate = False, size = 30)}
+		  <tr>
+		  <td></td><td>
+				${captchagen()}
+			</td>
+		  </tr>
       %endif
       <tr>
         <td>

@@ -39,7 +39,6 @@ from front import FrontController
 from health import HealthController
 from buttons import ButtonsController
 from buttons import ButtonjsController
-from captcha import CaptchaController
 from embed import EmbedController
 from error import ErrorController
 from post import PostController

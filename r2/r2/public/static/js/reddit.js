@@ -345,11 +345,9 @@ function unfriend(user_name, container_name, type) {
 };
 
 function share(elem) {
-    $.request("new_captcha");
     $(elem).new_thing_child($(".sharelink:first").clone(true)
                             .attr("id", "sharelink_" + $(elem).thing_id()),
                              false);
-    $.request("new_captcha");
 };
 
 function cancelShare(elem) {

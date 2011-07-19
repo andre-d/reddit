@@ -30,6 +30,7 @@ from r2.lib.template_helpers import add_sr
 from r2.lib.jsonresponse import json_respond, JQueryResponse, JsonResponse
 from r2.lib.jsontemplates import api_type
 from r2.lib.log import log_text
+from r2.lib.captcha import validate_captcha
 from r2.models import *
 from r2.lib.authorize import Address, CreditCard
 from r2.lib.utils import constant_time_compare
@@ -206,12 +207,6 @@ def validatedForm(self, self_method, responder, simple_vals, param_vals,
 
     # clear out the status line as a courtesy
     form.set_html(".status", "")
-
-    # auto-refresh the captcha if there are errors.
-    if (c.errors.errors and
-        any(isinstance(v, VCaptcha) for v in simple_vals)):
-        form.has_errors('captcha', errors.BAD_CAPTCHA)
-        form.new_captcha()
     
     # do the actual work
     val = self_method(self, form, responder, *a, **kw)
@@ -559,11 +554,9 @@ class VByNameIfAuthor(VByName):
         return self.set_error(errors.NOT_AUTHOR)
 
 class VCaptcha(Validator):
-    default_param = ('iden', 'captcha')
-    
-    def run(self, iden, solution):
+    def run(self, challenge, response):
         if (not c.user_is_loggedin or c.user.needs_captcha()):
-            if not captcha.valid_solution(iden, solution):
+            if(not validate_captcha(challenge,response,request.ip,g.recaptcha_key_private)):
                 self.set_error(errors.BAD_CAPTCHA)
 
 class VUser(Validator):

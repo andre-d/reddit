@@ -22,6 +22,7 @@
 
 <%namespace file="utils.html" import="error_field"/
 <%namespace name="utils" file="utils.html"/>
+<%namespace file="captcha.html" import="captchagen"/>
 
 <%!
    from r2.lib.pages import UserText
@@ -63,9 +64,13 @@
   </%utils:round_field>
 </div>  
 
-<div class="spacer">
-  ${thing.captcha}
-</div>  
+%if thing.captcha:
+	<div class="spacer">
+	<%utils:round_field title="captcha">
+		${captchagen()}
+	   </%utils:round_field>
+	</div>  
+%endif
 
 <button class="btn" type="submit">${_("send")}</button>
 &nbsp;

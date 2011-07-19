@@ -136,7 +136,6 @@ $(function() {
 });
 
 function showcover() {
-    $.request("new_captcha");
     $(".login-popup:first").fadeIn()
             .find(".popup").css("top", $(window).scrollTop() + 75).end()
             .find(".cover").css("height", $(document).height()).end()

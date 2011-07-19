@@ -28,6 +28,7 @@
 
 <%namespace file="utils.html" import="error_field, submit_form, plain_link, text_with_links, reddit_selector"/>
 <%namespace name="utils" file="utils.html"/>
+<%namespace file="captcha.html" import="captchagen"/>
 
 %if c.on_default_sr:
   <h1>${_("submit to reddit")}</h1>
@@ -100,9 +101,15 @@ ${thing.formtabs_menu}
   </%utils:round_field>
 </div>
 
-${thing.captcha}
-    
 </div>
+
+%if thing.captcha:
+<div class="spacer">
+ <%utils:round_field title="captcha">
+    ${captchagen()}
+</%utils:round_field>
+</div>
+%endif
 
 <div class="spacer">
   <button class="btn" name="submit" value="form" type="submit">${_("submit")}</button>

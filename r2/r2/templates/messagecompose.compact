@@ -22,6 +22,7 @@
 
 <%namespace file="utils.html" import="error_field, submit_form"/>
 <%namespace name="utils" file="utils.html"/>
+<%namespace file="captcha.html" import="captchagen"/>
 
 <%!
    import simplejson
@@ -46,13 +47,14 @@
     <input type="text" name="subject" value="${thing.subject or ''}"/>
     ${error_field("NO_SUBJECT", "subject", "span")}
   </%utils:round_field>
-
+  %if thing.captcha:
+    <%utils:round_field title="captcha">
+		${captchagen()}
+    </%utils:round_field>
+  %endif
   <%utils:round_field title="${_('message')}">
     ${UserText(None, have_form = False, creating = True)}
   </%utils:round_field>
-
-  ${thing.captcha}
-
 <span class="status"></span>
 
 </%utils:submit_form>

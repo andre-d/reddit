@@ -22,6 +22,7 @@
 
 <%namespace file="utils.html" import="error_field, submit_form"/>
 <%namespace name="utils" file="utils.html"/>
+<%namespace file="captcha.html" import="captchagen"/>
 
 <%!
    import simplejson
@@ -136,10 +137,13 @@ function admincheck(elem) {
 
  </div>
 
-
-<div class="spacer">
-  ${thing.captcha}
-</div>
+%if thing.captcha:
+	<div class="spacer">
+	 <%utils:round_field title="captcha">
+			${captchagen()}
+		</%utils:round_field>
+	</div>
+%endif
 
 <button id="send" name="send" type="submit">${_("send")}</button>
 <span class="status"></span>

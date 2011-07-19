@@ -40,7 +40,6 @@ from r2.lib.pages.things import wrap_links, default_thing_wrapper
 
 from r2.lib import spreadshirt
 from r2.lib.menus import CommentSortMenu
-from r2.lib.captcha import get_iden
 from r2.lib.strings import strings
 from r2.lib.filters import _force_unicode, websafe_json, websafe, spaceCompress
 from r2.lib.db import queries
@@ -78,10 +77,6 @@ class ApiminimalController(MinimalController):
     Put API calls in here which don't rely on the user being logged in
     """
 
-    @validatedForm()
-    def POST_new_captcha(self, form, jquery, *a, **kw):
-        jquery("body").captcha(get_iden())
-
 
 class ApiController(RedditController):
     """
@@ -116,7 +111,7 @@ class ApiController(RedditController):
         else:
             return {}
 
-    @validatedForm(VCaptcha(),
+    @validatedForm(VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
                    name=VRequired('name', errors.NO_NAME),
                    email=ValidEmails('email', num = 1),
                    reason = VOneOf('reason', ('ad_inq', 'feedback', "i18n")),
@@ -126,7 +121,7 @@ class ApiController(RedditController):
         if not (form.has_errors('name',     errors.NO_NAME) or
                 form.has_errors('email',    errors.BAD_EMAILS) or
                 form.has_errors('text', errors.NO_TEXT) or
-                form.has_errors('captcha', errors.BAD_CAPTCHA)):
+                form.has_errors('recaptcha_challenge_field', errors.BAD_CAPTCHA)):
 
             if reason == 'ad_inq':
                 emailer.ad_inq_email(email, message, name, reply_to = '')
@@ -136,14 +131,14 @@ class ApiController(RedditController):
                 emailer.feedback_email(email, message, name, reply_to = '')
             form.set_html(".status", _("thanks for your message! "
                             "you should hear back from us shortly."))
-            form.set_inputs(text = "", captcha = "")
+            form.set_inputs(text = "")
             form.find(".spacer").hide()
             form.find(".btn").hide()
 
     POST_ad_inq = POST_feedback
 
 
-    @validatedForm(VCaptcha(),
+    @validatedForm(VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
                    VUser(),
                    VModhash(),
                    ip = ValidIP(),
@@ -159,16 +154,16 @@ class ApiController(RedditController):
                                 errors.USER_BLOCKED) or
                 form.has_errors("subject", errors.NO_SUBJECT) or
                 form.has_errors("text", errors.NO_TEXT, errors.TOO_LONG) or
-                form.has_errors("captcha", errors.BAD_CAPTCHA)):
+                form.has_errors("recaptcha_challenge_field", errors.BAD_CAPTCHA)):
 
             m, inbox_rel = Message._new(c.user, to, subject, body, ip)
             form.set_html(".status", _("your message has been delivered"))
-            form.set_inputs(to = "", subject = "", text = "", captcha="")
+            form.set_inputs(to = "", subject = "", text = "")
 
             queries.new_message(m, inbox_rel)
 
     @validatedForm(VUser(),
-                   VCaptcha(),
+                   VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
                    VRatelimit(rate_user = True, rate_ip = True,
                               prefix = "rate_submit_"),
                    ip = ValidIP(),
@@ -388,7 +383,7 @@ class ApiController(RedditController):
         if not responder.has_errors("passwd", errors.WRONG_PASSWORD):
             self._login(responder, user, rem)
 
-    @validatedForm(VCaptcha(),
+    @validatedForm(VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
                    VRatelimit(rate_ip = True, prefix = "rate_register_"),
                    name = VUname(['user']),
                    email = ValidEmails("email", num = 1),
@@ -396,7 +391,7 @@ class ApiController(RedditController):
                    rem = VBoolean('rem'))
     def _handle_register(self, form, responder, name, email,
                       password, rem):
-        bad_captcha = responder.has_errors('captcha', errors.BAD_CAPTCHA)
+        bad_captcha = responder.has_errors('recaptcha_challenge_field', errors.BAD_CAPTCHA)
         if not (responder.has_errors("user", errors.BAD_USERNAME,
                                 errors.USERNAME_TAKEN_DEL,
                                 errors.USERNAME_TAKEN) or
@@ -405,7 +400,6 @@ class ApiController(RedditController):
                 responder.has_errors("passwd2", errors.BAD_PASSWORD_MATCH) or
                 responder.has_errors('ratelimit', errors.RATELIMIT) or
                 (not g.disable_captcha and bad_captcha)):
-            
             user = register(name, password)
             VRatelimit.ratelimit(rate_ip = True, prefix = "rate_register_")
 
@@ -904,7 +898,7 @@ class ApiController(RedditController):
 
     @validatedForm(VUser(),
                    VModhash(),
-                   VCaptcha(),
+                   VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
                    VRatelimit(rate_user = True, rate_ip = True,
                               prefix = "rate_share_"),
                    share_from = VLength('share_from', max_length = 100),
@@ -936,7 +930,7 @@ class ApiController(RedditController):
                                   errors.TOO_MANY_EMAILS):
             shareform.find(".share-to-errors").children().hide()
         # lastly, check the captcha.
-        elif shareform.has_errors("captcha", errors.BAD_CAPTCHA):
+        elif shareform.has_errors("recaptcha_challenge_field", errors.BAD_CAPTCHA):
             pass
         elif shareform.has_errors("ratelimit", errors.RATELIMIT):
             pass

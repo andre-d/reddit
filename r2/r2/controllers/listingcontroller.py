@@ -771,7 +771,7 @@ class MessageController(ListingController):
               message = nop('message'),
               success = nop('success'))
     def GET_compose(self, to, subject, message, success):
-        captcha = Captcha() if c.user.needs_captcha() else None
+        captcha = True if c.user.needs_captcha() else False
         content = MessageCompose(to = to, subject = subject,
                                  captcha = captcha,
                                  message = message,

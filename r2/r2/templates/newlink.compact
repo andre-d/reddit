@@ -28,6 +28,7 @@
 
 <%namespace file="utils.html" import="error_field, submit_form, plain_link, text_with_links, reddit_selector"/>
 <%namespace name="utils" file="utils.html"/>
+<%namespace file="captcha.html" import="captchagen"/>
 
 Try our&#32;<a href="/iphonebookmarklet.compact?__javascript:location.href='http://${g.domain}/submit.compact?url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title)">bookmarklet</a>.
 
@@ -104,7 +105,13 @@ ${thing.formtabs_menu}
   </%utils:round_field>
 </div>
 
-${thing.captcha}
+%if thing.captcha:
+<div class="spacer">
+  <%utils:round_field title="captcha">
+	${captchagen()}
+	  </%utils:round_field>
+</div>
+%endif
     
 </div>
 

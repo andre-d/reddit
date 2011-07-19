@@ -34,7 +34,6 @@ from pylons.controllers.util import abort
 
 from r2.lib import promote
 from r2.lib.traffic import load_traffic, load_summary
-from r2.lib.captcha import get_iden
 from r2.lib.contrib.markdown import markdown
 from r2.lib.filters import spaceCompress, _force_unicode, _force_utf8
 from r2.lib.filters import unsafe, websafe, SC_ON, SC_OFF, websafe_json
@@ -117,7 +116,7 @@ class Reddit(Templated):
 
     def __init__(self, space_compress = True, nav_menus = None, loginbox = True,
                  infotext = '', content = None, short_description='', title = '', robots = None, 
-                 show_sidebar = True, footer = True, srbar = True,
+                 show_sidebar = True, has_share=True, footer = True, srbar = True,
                  **context):
         Templated.__init__(self, **context)
         self.title          = title
@@ -126,6 +125,7 @@ class Reddit(Templated):
         self.infotext       = infotext
         self.loginbox       = True
         self.show_sidebar   = show_sidebar
+        self.has_share      = has_share
         self.space_compress = space_compress and not g.template_debug
         # instantiate a footer
         self.footer         = RedditFooter() if footer else None
@@ -165,7 +165,7 @@ class Reddit(Templated):
         if srbar and not c.cname and not is_api():
             self.srtopbar = SubredditTopBar()
 
-        if c.user_is_loggedin and self.show_sidebar and not is_api():
+        if c.user_is_loggedin and self.show_sidebar and self.has_share and not is_api():
             self._content = PaneStack([ShareLink(), content])
         else:
             self._content = content
@@ -613,7 +613,7 @@ class MessagePage(Reddit):
 class MessageCompose(Templated):
     """Compose message form."""
     def __init__(self,to='', subject='', message='', success='', 
-                 captcha = None):
+                 captcha = False):
         from r2.models.admintools import admintools
 
         Templated.__init__(self, to = to, subject = subject,
@@ -649,8 +649,8 @@ class FormPage(BoringPage):
     create_reddit_box  = False
     submit_box         = False
     """intended for rendering forms with no rightbox needed or wanted"""
-    def __init__(self, pagename, show_sidebar = False, *a, **kw):
-        BoringPage.__init__(self, pagename,  show_sidebar = show_sidebar,
+    def __init__(self, pagename, show_sidebar = False, has_share = True, *a, **kw):
+        BoringPage.__init__(self, pagename,  show_sidebar = show_sidebar, has_share=has_share, 
                             *a, **kw)
         
 
@@ -689,7 +689,7 @@ class Login(Templated):
     """The two-unit login and register form."""
     def __init__(self, user_reg = '', user_login = '', dest=''):
         Templated.__init__(self, user_reg = user_reg, user_login = user_login,
-                           dest = dest, captcha = Captcha())
+                           dest = dest, captcha = True)
 
 class Register(Login):
     pass
@@ -1543,10 +1543,10 @@ class ResetPassword(Templated):
 
 
 class Captcha(Templated):
-    """Container for rendering robot detection device."""
-    def __init__(self, error=None):
-        self.error = _('try entering those letters again') if error else ""
-        self.iden = get_captcha()
+    """Container for rendering robot detection device.
+    Obsolete
+    """
+    def __init__(self):
         Templated.__init__(self)
 
 class PermalinkMessage(Templated):
@@ -1704,7 +1704,7 @@ class FrameToolbar(Wrapped):
 
 class NewLink(Templated):
     """Render the link submission form"""
-    def __init__(self, captcha = None, url = '', title= '', subreddits = (),
+    def __init__(self, captcha = False, url = '', title= '', subreddits = (),
                  then = 'comments'):
 
         self.show_link = self.show_self = False
@@ -1841,9 +1841,9 @@ class Feedback(Templated):
             email = getattr(c.user, "email", "")
             name = c.user.name
 
-        captcha = None
+        captcha = False
         if not c.user_is_loggedin or c.user.needs_captcha():
-            captcha = Captcha()
+            captcha = True
 
         Templated.__init__(self,
                          captcha = captcha,

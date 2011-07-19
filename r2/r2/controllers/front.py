@@ -699,12 +699,12 @@ class FrontController(RedditController):
         if not (c.default_sr or c.site.can_submit(c.user)):
             abort(403, "forbidden")
 
-        captcha = Captcha() if c.user.needs_captcha() else None
+        captcha = True if c.user.needs_captcha() else False
         sr_names = (Subreddit.submit_sr_names(c.user) or
                     Subreddit.submit_sr_names(None))
 
         return FormPage(_("submit"),
-                        show_sidebar = True,
+                        show_sidebar = True,has_share=False,
                         content=NewLink(url=url or '',
                                         title=title or '',
                                         subreddits = sr_names,
