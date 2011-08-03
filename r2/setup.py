@@ -32,7 +32,6 @@ import os
 import fnmatch
 
 commands = {"build_ext": build_ext}
-
 try:
     from babel.messages import frontend as babel
     commands.update({

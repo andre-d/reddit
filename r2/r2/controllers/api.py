@@ -259,7 +259,8 @@ class ApiController(RedditController):
 
         if form.has_errors('ratelimit', errors.RATELIMIT):
             pass
-
+        if(not g.disable_captcha and form.has_errors('recaptcha_challenge_field', errors.BAD_CAPTCHA)):
+            return
         if form.has_error() or not title:
             return
 

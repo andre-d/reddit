@@ -1541,14 +1541,6 @@ class ResetPassword(Templated):
     (step 3 of password recovery.)"""
     pass
 
-
-class Captcha(Templated):
-    """Container for rendering robot detection device.
-    Obsolete
-    """
-    def __init__(self):
-        Templated.__init__(self)
-
 class PermalinkMessage(Templated):
     """renders the box on comment pages that state 'you are viewing a
     single comment's thread'"""

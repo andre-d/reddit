@@ -52,6 +52,7 @@ function post_user(form, where) {
 }
 
 function post_form(form, where, statusfunc, nametransformfunc, block) {
+    captcha = !!window.Recaptcha;
     try {
         if(statusfunc == null)
             statusfunc = function(x) { 
@@ -60,8 +61,14 @@ function post_form(form, where, statusfunc, nametransformfunc, block) {
         /* set the submitted state */
         $(form).find(".error").not(".status").hide();
         $(form).find(".status").html(statusfunc(form)).show();
+        if(captcha == true){
+            Recaptcha.reload();
+        }
         return simple_post_form(form, where, {}, block);
     } catch(e) {
+        if(captcha == true){
+            Recaptcha.reload();
+        }
         return false;
     }
 };
@@ -344,10 +351,58 @@ function unfriend(user_name, container_name, type) {
     }
 };
 
+function showRecaptcha(element, submitButton, recaptchaButton, pubkey, lang) {
+    Recaptcha.destroy();
+    Recaptcha.create(pubkey, element, {
+        tabindex: 0,
+        theme: 'clean',
+        lang :  lang,
+        callback: Recaptcha.focus_response_field
+    });
+    $(".contact_submit").hide();
+    $(".recaptcha_required").show();
+    $("#"+recaptchaButton).hide();
+    $("#"+submitButton).show();
+}
+
+function createCaptcha(id, pubkey, lang){
+    if(!($('#recaptcha_required_'+id).is(':visible'))){return true;}
+    showRecaptcha('recaptcha_div_'+id,
+        'submit_'+id,
+        'recaptcha_required_'+id,
+        pubkey, lang);
+    return false;
+}
+
 function share(elem) {
+    id = $(elem).thing_id();
     $(elem).new_thing_child($(".sharelink:first").clone(true)
-                            .attr("id", "sharelink_" + $(elem).thing_id()),
+                            .attr("id", "sharelink_" + id),
                              false);
+    newelem=$("#sharelink_" + id).find(".captchagen");
+    if(newelem.length > 0){
+        if(!window.Recaptcha){
+            $('<script>').attr('src', "http://api.recaptcha.net/js/recaptcha_ajax.js").appendTo('body')
+        }
+        
+        keys = newelem.attr('class').split(' ');
+        newelem.html("");
+        $('<div>').attr('id', 'recaptcha_div_' + id).appendTo(newelem);
+        
+        $('<button>').attr({
+            id: 'recaptcha_required_' + id,
+            onclick: "return createCaptcha('" + id + "','" + keys[1] + "','" + keys[4] + "');",
+            class: 'recaptcha_required btn' + keys[3]}).html(keys[3]).appendTo(newelem);
+        $('<button>').attr({
+            id: 'submit_' + id,
+            class: 'btn contact_submit'}).html(keys[3]).appendTo(newelem);
+        $('<button>').attr({
+            class: 'btn cancel_share',
+            onclick: "return cancelShare('this');"}).html(keys[2]).appendTo(newelem);
+
+        $(".contact_submit").hide();
+        $(".cancelShare").hide();
+    }
 };
 
 function cancelShare(elem) {

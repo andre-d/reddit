@@ -22,7 +22,7 @@
 from reddit_base import RedditController
 from pylons import c, request
 from pylons.i18n import _
-from r2.lib.pages import FormPage, Feedback, Captcha, PaneStack, SelfServeBlurb, FeedbackBlurb
+from r2.lib.pages import FormPage, Feedback, PaneStack, SelfServeBlurb, FeedbackBlurb
 
 class FeedbackController(RedditController):
 

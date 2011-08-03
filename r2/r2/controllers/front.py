@@ -704,7 +704,7 @@ class FrontController(RedditController):
                     Subreddit.submit_sr_names(None))
 
         return FormPage(_("submit"),
-                        show_sidebar = True,has_share=False,
+                        show_sidebar = True, has_share=False,
                         content=NewLink(url=url or '',
                                         title=title or '',
                                         subreddits = sr_names,

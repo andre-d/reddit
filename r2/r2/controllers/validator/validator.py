@@ -556,7 +556,7 @@ class VByNameIfAuthor(VByName):
 class VCaptcha(Validator):
     def run(self, challenge, response):
         if (not c.user_is_loggedin or c.user.needs_captcha()):
-            if(not validate_captcha(challenge,response,request.ip,g.recaptcha_key_private)):
+            if not validate_captcha(challenge, response, request.ip, g.recaptcha_key_private):
                 self.set_error(errors.BAD_CAPTCHA)
 
 class VUser(Validator):
