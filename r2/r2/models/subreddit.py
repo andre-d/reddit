@@ -224,6 +224,21 @@ class Subreddit(Thing, Printable):
         else:
             return False
 
+    def getWikiPage(self, page="index", which=0):
+        get_str = 'wiki_%s_text'
+        if(which > 0):
+            get_str += 'Hist%d' % which
+        try:
+            return getattr(self,get_str % page)
+        except:
+           return ""
+
+    def getNumHistWiki(self, page="index"):
+        try:
+            return getattr(self,'wiki_%s_numHist' % page)
+        except:
+           return -1
+
     def can_submit(self, user):
         if c.user_is_admin:
             return True
@@ -604,6 +619,13 @@ class Subreddit(Thing, Printable):
             # we've seen the image before, so just return the existing num
             num = self.images[name]
         return num
+       
+    def setWikiPage(self, name, text):
+        n = self.getNumHistWiki(name)
+        if(n >=0):
+            setattr(self, ('wiki_%s_textHist%d') % (name, n+1), self.getWikiPage(name))
+        setattr(self,'wiki_%s_numHist' % name, n+1)
+        setattr(self, 'wiki_%s_text' % name, text)
 
     def del_image(self, name):
         """

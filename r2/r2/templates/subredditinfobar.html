@@ -78,8 +78,11 @@
   ${flair_control(thing.flair_user)}
 
   %if thing.sr.description:
-    ${thing.sr.usertext}
+    ${thing.sr.description}
   %endif
+
+  <br/>
+  ${thing.sr.getWikiPage('sidebar')}
 
   <div class="bottom">
     %if thing.sr.author:
