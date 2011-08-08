@@ -1,0 +1,41 @@
+<style type="text/css">
+    .diff_sub{
+        color: red;
+    }
+    .diff_add{
+        color: green;
+    }
+</style>
+<h1>
+%if thing.message:
+    ${unsafe(thing.message)}<br/>
+%endif
+%if thing.history:
+    Version History:
+    %for h in thing.history:
+    <a href="?ver=${h}">  V${h}  </a>
+    %endfor
+    <a href="?ver=0">
+        Current
+    </a>
+%endif
+</h1>
+<div class="roundfield" style="background-color: #2FFFFF; min-width: 550px;">
+    <h1 class="roundfield ">${thing.page_title}</h1>
+    <div style="min-height: 200px;" class="roundfield" >
+        ${unsafe(thing.page_content)}
+    </div>
+</div>
+%if thing.can_edit:
+<form method="post">
+    <div class="usertext-edit">
+        <div>
+            <input type="hidden" name="orig-page" value="${thing.num}" />
+            <textarea name="page">${unsafe(thing.unedited_page_content)}</textarea>
+        </div>
+    </div>
+    <div class="usertext-buttons">
+        <button type=submit>Submit</button>
+    </div>
+</form>
+%endif
