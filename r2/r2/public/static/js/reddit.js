@@ -391,14 +391,22 @@ function share(elem) {
         
         $('<button>').attr({
             id: 'recaptcha_required_' + id,
-            onclick: "return createCaptcha('" + id + "','" + keys[1] + "','" + keys[4] + "');",
-            class: 'recaptcha_required btn' + keys[3]}).html(keys[3]).appendTo(newelem);
+            onclick: "return createCaptcha('" + id + "','" + keys[1] + "','" + keys[4] + "');"})
+        .addClass('recaptcha_required btn' + keys[3])
+        .html(keys[3])
+        .appendTo(newelem);
+        
         $('<button>').attr({
-            id: 'submit_' + id,
-            class: 'btn contact_submit'}).html(keys[3]).appendTo(newelem);
+            id: 'submit_' + id})
+        .addClass('btn contact_submit')
+        .html(keys[3])
+        .appendTo(newelem);
+        
         $('<button>').attr({
-            class: 'btn cancel_share',
-            onclick: "return cancelShare('this');"}).html(keys[2]).appendTo(newelem);
+            onclick: "return cancelShare('this');"})
+        .addClass('btn cancel_share')
+        .html(keys[2])
+        .appendTo(newelem);
 
         $(".contact_submit").hide();
         $(".cancelShare").hide();

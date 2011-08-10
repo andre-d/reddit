@@ -47,7 +47,7 @@
       ${js_preamble()}
     </script> 
     ${unsafe(js.use('jquery', 'mobile'))}
-    <script type="text/javascript">var RecaptchaOptions = {lang : '${c.lang}',theme: 'clean'};</script>
+    <script type="text/javascript">var RecaptchaOptions = {lang : reddit.lang,theme: 'clean'};</script>
     ${googleanalytics('mobile')}
   </head>
   ${self.bodyHTML()}
