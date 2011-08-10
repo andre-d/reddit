@@ -38,11 +38,13 @@ from r2.lib.filters import _force_unicode
 from r2.lib.db import tdb_cassandra
 from r2.lib.cache import CL_ONE
 
+from r2.models.wiki import Wiki
 
 import os.path
 import random
 
 class SubredditExists(Exception): pass
+class WikiExists(Exception): pass
 
 class Subreddit(Thing, Printable):
     # Note: As of 2010/03/18, nothing actually overrides the static_path
@@ -223,21 +225,6 @@ class Subreddit(Thing, Printable):
             return True
         else:
             return False
-
-    def getWikiPage(self, page="index", which=0):
-        get_str = 'wiki_%s_text'
-        if(which > 0):
-            get_str += 'Hist%d' % which
-        try:
-            return getattr(self,get_str % page)
-        except:
-           return ""
-
-    def getNumHistWiki(self, page="index"):
-        try:
-            return getattr(self,'wiki_%s_numHist' % page)
-        except:
-           return -1
 
     def can_submit(self, user):
         if c.user_is_admin:
@@ -585,6 +572,23 @@ class Subreddit(Thing, Printable):
             if isinstance(img_num, int):
                 yield (name, img_num)
 
+    def get_wiki(self, name):
+        try:
+            return Wiki._by_name(name = name, sr = self._id)
+        except:
+            pass
+        return None
+    
+    def get_wiki_content(self, name):
+        wiki = self.get_wiki(name)
+        if(wiki):
+            return wiki.content
+        else:
+            return ""
+
+    def add_wiki(self, name, content):
+        wiki = Wiki._edit(name, self._id, content)
+
     def add_image(self, name, max_num = None):
         """
         Adds an image to the subreddit's image list.  The resulting
@@ -619,13 +623,6 @@ class Subreddit(Thing, Printable):
             # we've seen the image before, so just return the existing num
             num = self.images[name]
         return num
-       
-    def setWikiPage(self, name, text):
-        n = self.getNumHistWiki(name)
-        if(n >=0):
-            setattr(self, ('wiki_%s_textHist%d') % (name, n+1), self.getWikiPage(name))
-        setattr(self,'wiki_%s_numHist' % name, n+1)
-        setattr(self, 'wiki_%s_text' % name, text)
 
     def del_image(self, name):
         """
