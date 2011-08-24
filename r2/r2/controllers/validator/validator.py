@@ -30,7 +30,6 @@ from r2.lib.template_helpers import add_sr
 from r2.lib.jsonresponse import json_respond, JQueryResponse, JsonResponse
 from r2.lib.jsontemplates import api_type
 from r2.lib.log import log_text
-from r2.lib.captcha import validate_captcha
 from r2.models import *
 from r2.lib.authorize import Address, CreditCard
 from r2.lib.utils import constant_time_compare
@@ -555,9 +554,9 @@ class VByNameIfAuthor(VByName):
 
 class VCaptcha(Validator):
     def run(self, challenge, response):
-        if (not c.user_is_loggedin or c.user.needs_captcha()):
-            if not validate_captcha(challenge, response, request.ip, g.recaptcha_key_private):
-                self.set_error(errors.BAD_CAPTCHA)
+        if not g.disable_captcha and (not c.user_is_loggedin or c.user.needs_captcha()):
+            return (challenge, response, request.ip, g.recaptcha_key_private)
+        return None
 
 class VUser(Validator):
     def run(self, password = None):

@@ -27,3 +27,9 @@ def get_captcha_html(public_key):
 def validate_captcha(challenge, response, ip, private_key):
     response = captcha.submit(challenge, response, private_key, ip)
     return response.is_valid and response.error_code == None
+
+def bool_validate_captcha(captcha):
+    if captcha != None:
+        if not validate_captcha(captcha[0], captcha[1], captcha[2], captcha[3]):
+            return False
+    return True

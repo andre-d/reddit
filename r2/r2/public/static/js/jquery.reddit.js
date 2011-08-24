@@ -155,6 +155,8 @@ function handleResponse(action) {
     };
 };
 
+r.ajax.handleResponse = handleResponse;
+
 var api_loc = '/api/';
 $.request = function(op, parameters, worker_in, block, type, 
                      get_only, errorhandler) {

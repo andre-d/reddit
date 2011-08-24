@@ -52,7 +52,6 @@ function post_user(form, where) {
 }
 
 function post_form(form, where, statusfunc, nametransformfunc, block) {
-    captcha = !!window.Recaptcha;
     try {
         if(statusfunc == null)
             statusfunc = function(x) { 
@@ -61,14 +60,8 @@ function post_form(form, where, statusfunc, nametransformfunc, block) {
         /* set the submitted state */
         $(form).find(".error").not(".status").hide();
         $(form).find(".status").html(statusfunc(form)).show();
-        if(captcha == true){
-            Recaptcha.reload();
-        }
         return simple_post_form(form, where, {}, block);
     } catch(e) {
-        if(captcha == true){
-            Recaptcha.reload();
-        }
         return false;
     }
 };
@@ -99,8 +92,26 @@ function form_error(form) {
     }
 }
 
+function checkCaptchaRefresh() {
+    /* Finds the recaptcha area on the page and refreshes the captcha if the captcha error field in the parent form is visible */
+    if(window.Recaptcha) {
+        var err = $("#recaptcha_area").parents('form:first').find(".BAD_CAPTCHA");
+        if (err.length == 1 && err.is(':visible')) {
+            Recaptcha.reload();
+        }
+    }
+}
+
+function checkCaptchaCallback(){
+     return function(arg) {
+         var res = r.ajax.handleResponse().apply(this, arguments);
+         checkCaptchaRefresh();
+         return res;
+    }
+}
+
 function simple_post_form(form, where, fields, block) {
-    $.request(where, get_form_fields(form, fields), null, block, 
+    $.request(where, get_form_fields(form, fields), checkCaptchaCallback(), block, 
               "json", false, form_error(form));
     return false;
 };
@@ -391,19 +402,22 @@ function share(elem) {
         
         $('<button>').attr({
             id: 'recaptcha_required_' + id,
-            onclick: "return createCaptcha('" + id + "','" + keys[1] + "','" + keys[4] + "');"})
+            onclick: "return false"})
+        .bind('click', {id: id, keys: keys}, function(event){
+            createCaptcha(event.data.id, event.data.keys[1], event.data.keys[4]);
+        })
         .addClass('recaptcha_required btn' + keys[3])
         .html(keys[3])
         .appendTo(newelem);
         
-        $('<button>').attr({
+        $("<button type='submit'>").attr({
             id: 'submit_' + id})
         .addClass('btn contact_submit')
         .html(keys[3])
         .appendTo(newelem);
         
-        $('<button>').attr({
-            onclick: "return cancelShare('this');"})
+        btn = $('<button>');
+        btn.bind('click', {t: btn}, function(event) {cancelShare(event.data.t);})
         .addClass('btn cancel_share')
         .html(keys[2])
         .appendTo(newelem);
