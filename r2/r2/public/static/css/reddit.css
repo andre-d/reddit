@@ -2482,9 +2482,6 @@ form input[type=radio] {margin: 2px .5em 0 0; }
 .pretty-form input[type=checkbox],
 .pretty-form input[type=radio] {margin: 2px .5em 0 0; }
 .pretty-form img { margin: 3px .5em}
-
-
-
 .pretty-form input[type=text],
 .pretty-form textarea,
 .pretty-form input[type=password] {
@@ -2497,7 +2494,7 @@ form input[type=radio] {margin: 2px .5em 0 0; }
     box-shadow: inset 0px 1px 1px hsla(0,0%,0%,.3), 0px 1px 0px hsla(0,0%,100%,.6);
 }
 .recaptcha_input_area input {
-	width: auto !important;
+    width: auto !important;
 }
 
 .pretty-form .infobar {

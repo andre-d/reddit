@@ -60,6 +60,10 @@ import urllib
 import urllib2
 
 def form_validate_captcha(captcha, form):
+    """ Validates a captcha and sets the error field in a form.
+        Validating a captcha consumes the challenge/response tokens.
+        Since this forces us to refresh the captcha, this should be called as late as possible.
+    """
     if not bool_validate_captcha(captcha):
         c.errors.add(errors.BAD_CAPTCHA, field = 'recaptcha_challenge_field')
         form.set_error(errors.BAD_CAPTCHA, 'recaptcha_challenge_field')
@@ -165,9 +169,7 @@ class ApiController(RedditController):
             m, inbox_rel = Message._new(c.user, to, subject, body, ip)
             form.set_html(".status", _("your message has been delivered"))
             form.set_inputs(to = "", subject = "", text = "")
-            form.find(".spacer").hide()
-            form.find("#send").hide()
-            
+            form.refreshCaptcha()
             queries.new_message(m, inbox_rel)
 
     @validatedForm(VUser(),
@@ -267,8 +269,7 @@ class ApiController(RedditController):
 
         if form.has_errors('ratelimit', errors.RATELIMIT):
             pass
-        if(not g.disable_captcha and form.has_errors('recaptcha_challenge_field', errors.BAD_CAPTCHA)):
-            return
+        
         if form.has_error() or not title:
             return
 

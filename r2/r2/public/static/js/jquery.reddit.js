@@ -30,6 +30,12 @@ $.fn.debug = function() {
     return $(this);
 }
 
+$.fn.refreshCaptcha = function() {
+    if(window.Recaptcha) {
+        Recaptcha.reload();
+    }
+};
+
 $.redirect = function(dest) {
     window.location = dest;
 };
