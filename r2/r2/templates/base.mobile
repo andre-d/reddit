@@ -26,7 +26,6 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="${c.lang}" 
       xml:lang="${c.lang}" ${c.lang_rtl and unsafe('dir="rtl"') or ''}>
 <head>
-<script type="text/javascript">var RecaptchaOptions = {lang : '${c.lang}',theme: 'clean'};</script>
 
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="canonical" href="${thing.canonical_link}" />
