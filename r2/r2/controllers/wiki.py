@@ -19,13 +19,13 @@ class WikiController(RedditController):
 
     def GET_wiki(self, wikiname="index", message=""):
         wiki = self.sr.get_wiki(wikiname)
-        if(wiki):
+        if wiki:
             num = wiki.history_size()
             num_edits = wiki.edit_count
             page = wiki.content
         else:
             num = num_edits = -1
-            page = ""
+            page = str()
         history = []
         if num > 0:
             for i in range(1,num+1):

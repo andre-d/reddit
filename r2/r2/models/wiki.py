@@ -10,7 +10,7 @@ class Wiki(Thing, Printable):
         return list(w)[0]
         
     @classmethod
-    def _edit(cls, name, sr_id, text):
+    def _new(cls, name, sr_id, text):
         w = Wiki(content = text, name = name, sr = sr_id)
         w._commit()
         return w

@@ -587,7 +587,7 @@ class Subreddit(Thing, Printable):
             return ""
 
     def add_wiki(self, name, content):
-        wiki = Wiki._edit(name, self._id, content)
+        wiki = Wiki._new(name, self._id, content)
 
     def add_image(self, name, max_num = None):
         """
