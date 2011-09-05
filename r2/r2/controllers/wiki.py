@@ -15,17 +15,19 @@ class WikiController(RedditController):
         self.sr = Subreddit._by_name(self.wiki_sr)
 
     def getFullWikiName(self,wikiname):
-        return "%s/%s"%(self.wiki_sr,wikiname)
+        return "%s/%s" % (self.wiki_sr,wikiname)
 
     def GET_wiki(self, wikiname="index", message=""):
         wiki = self.sr.get_wiki(wikiname)
         if(wiki):
             num = wiki.history_size()
             num_edits = wiki.edit_count
+            page = wiki.content
         else:
             num = num_edits = -1
+            page = ""
         history = []
-        if(num>0):
+        if num > 0:
             for i in range(1,num+1):
                 history.append(i)
         try:
@@ -35,29 +37,27 @@ class WikiController(RedditController):
 
         diff = False
 
-        if(ver<=0):
+        if ver <= 0:
             message += "Viewing current version"
-        elif(ver>num):
+        elif ver > num:
             abort(404)
         else:
             message += "Viewing version: %d<br/>"%ver # These should be in a list instead of one long string with html line breaks
             diff = True
-        if(wiki):
-            page = wiki.content
-        else:
-            page = ""
+        
         f_wikiname = self.getFullWikiName(wikiname)
         try:
             act = request.GET['act']
         except:
             act = ""
 
-        if(diff):
+        if diff:
             hd = difflib.HtmlDiff()
             t=hd.make_table(wiki.hist[ver-1].split('\n'), page.split('\n'), fromdesc="Version %d"%ver, todesc="Current")
+            page = wiki.hist[ver-1]
             message+="<br/>"+t
 
-        if(act=="get"):
+        if act == "get":
             return safemarkdown(page) # Should be inside json and not filtered
         else:
             content = WikiView(wikiname = f_wikiname, history = history, can_edit = c.user_is_loggedin and self.sr.can_submit(c.user) and (not diff), message = message, num = num_edits, unedited_page_content = page, page_content = safemarkdown(page))
@@ -69,16 +69,16 @@ class WikiController(RedditController):
         wiki = self.sr.get_wiki(wikiname)
         #except:
          #   wiki = None
-        if(c.user_is_loggedin and self.sr.can_submit(c.user)):
+        if c.user_is_loggedin and self.sr.can_submit(c.user):
             try:
                 diff = wiki.edit_count != int(request.POST['orig-page'])
                 # We should also just silently fail if no changes were made
             except:
                 diff = False
             message="Error, old version was not the same as yours\n"
-            if(not diff): # We should attempt a merge, difflib cannot do that directly
-                if(wiki):
-                    wiki.edit(request.POST['page']) # fixme
+            if not diff: # We should attempt a merge, difflib cannot do that directly
+                if wiki:
+                    wiki.edit(request.POST['page'])
                     message="Edited\n"
                 else:
                     self.sr.add_wiki(wikiname, request.POST['page'])
