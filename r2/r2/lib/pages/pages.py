@@ -495,6 +495,8 @@ class SubredditInfoBar(CachedTemplate):
         # we want to cache on the number of subscribers
         self.subscribers = self.sr._ups
 
+        self.sidebar_wiki = self.sr.get_wiki_content('sidebar')
+
         # so the menus cache properly
         self.path = request.path
 

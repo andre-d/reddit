@@ -5,6 +5,9 @@
     .diff_add{
         color: green;
     }
+    .diff_chg{
+        color: purple;
+    }
 </style>
 <h1>
 %if thing.message:
@@ -13,12 +16,16 @@
 %if thing.history:
     Version History:
     %for h in thing.history:
-    <a href="?ver=${h}">  V${h}  </a>
+        <a href="?ver=${h[1]}">  V${h[0]}  </a>
     %endfor
-    <a href="?ver=0">
+    <a href="?ver=">
         Current
     </a>
 %endif
+<br/>
+Edit ID: ${thing.edit_id}
+<br/>
+Edit by user: ${thing.edit_username}
 </h1>
 <div class="roundfield" style="background-color: #2FFFFF; min-width: 550px;">
     <h1 class="roundfield ">${thing.page_title}</h1>

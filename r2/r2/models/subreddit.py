@@ -582,12 +582,12 @@ class Subreddit(Thing, Printable):
     def get_wiki_content(self, name):
         wiki = self.get_wiki(name)
         if(wiki):
-            return wiki.content
+            return wiki.content.content
         else:
             return ""
 
     def add_wiki(self, name, content):
-        wiki = Wiki._new(name, self._id, content)
+        wiki = Wiki._new(name, self, content, c.user)
 
     def add_image(self, name, max_num = None):
         """
