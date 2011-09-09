@@ -10,8 +10,10 @@
     }
 </style>
 <h1>
-%if thing.message:
-    ${unsafe(thing.message)}<br/>
+%if thing.messages:
+    %for m in thing.messages:
+        ${unsafe(m)}<br/>
+    %endfor
 %endif
 %if thing.history:
     Version History:

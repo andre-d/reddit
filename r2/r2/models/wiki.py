@@ -1,6 +1,8 @@
 from printable import Printable
 from r2.lib.db.thing import Thing
 from r2.models.account import Account
+from datetime import datetime
+from pylons import c, request, g
 
 class Wiki(Thing):
     _defaults = dict(content = None, name = str(), sr = None, edit_count = -1, hist = [])
@@ -26,15 +28,19 @@ class Wiki(Thing):
         self.content = WikiEdit._new(text, account, self)
         self.edit_count += 1
         self._commit()
+
+    def get_edit(edit_id, include_hidden):
+        return
     
     def history_size(self):
         return len(self.hist)
 
 class WikiEdit(Thing):
-    _defaults = dict(content = str(), account = None, wiki = None)
+    _defaults = dict(content = str(), hidden = False, when = None, account = None, wiki = None)
     
     @classmethod
     def _new(cls, content, account, wiki):
         e = WikiEdit(content = content, account = account, wiki = wiki)
+        e.when = datetime.now(g.tz)
         e._commit()
         return e

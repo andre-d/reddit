@@ -581,9 +581,9 @@ class Subreddit(Thing, Printable):
     
     def get_wiki_content(self, name):
         wiki = self.get_wiki(name)
-        if(wiki):
+        try:
             return wiki.content.content
-        else:
+        except:
             return ""
 
     def add_wiki(self, name, content):
