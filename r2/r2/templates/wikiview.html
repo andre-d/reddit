@@ -18,9 +18,9 @@
 %if thing.history:
     Version History:
     %for h in thing.history:
-        <a href="?ver=${h[1]}">  V${h[0]}  </a>
+        <a href="${thing.wikibase}/e/${h[1]}/${thing.wikiname}">  V${h[0]}  </a>
     %endfor
-    <a href="?ver=">
+    <a href="${thing.wikibase}/${thing.wikiname}">
         Current
     </a>
 %endif

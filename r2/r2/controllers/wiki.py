@@ -9,24 +9,33 @@ import difflib
 from r2.lib.db.queries import changed
 
 class WikiController(RedditController):
+    def get_request_var(self, name):
+        ret = ""
+        try:
+            ret = request.GET[name]
+        except:
+            try:
+                ret = request.POST[name]
+            except:
+                pass
+        return ret
+    
     def pre(self):
         RedditController.pre(self)
         self.wiki_sr = c.site.name if c.site.name != " reddit.com" else g.default_sr
+        self.base_url = '/wiki' if c.site.name == " reddit.com" else '/r/'+c.site.name+'/wiki'
         self.sr = Subreddit._by_name(self.wiki_sr)
         self.messages = []
-        try:
-            self.act = request.GET['act']
-        except:
-            self.act = str()
-        try:
-            self.ver = int(request.GET['ver'])
-        except:
-            self.ver = 0
+        self.act = self.get_request_var('act')
 
     def getFullWikiName(self, wikiname):
         return "%s/%s" % (self.wiki_sr, wikiname)
 
-    def GET_wiki(self, wikiname="index"):
+    def GET_wiki(self, wikiname="index", edit_id = None):
+        try:
+            self.ver = int(edit_id)
+        except:
+            self.ver = 0
         wiki = self.sr.get_wiki(wikiname)
         edit = None
         if wiki:
@@ -36,20 +45,17 @@ class WikiController(RedditController):
         else:
             num_edits = -1
         history = []
-        try:
-            ver = int(request.GET['ver'])
-        except:
-            ver = 0
         n = 0
         if wiki:
             for h in wiki.hist:
-                if not hasattr(h, 'hidden') or not h.hidden:
-                    if h._id == ver:
-                        edit = h
-                        n = h.when
-                    history.append((h.when, h._id))
+                if h is not None:
+                    if not hasattr(h, 'hidden') or not h.hidden:
+                        if h._id == self.ver:
+                            edit = h
+                            n = h.when
+                        history.append((h.when, h._id))
         
-        if ver == 0:
+        if self.ver == 0:
             self.messages.append("Viewing current version")
             try:
                 page = wiki.content.content
@@ -58,7 +64,7 @@ class WikiController(RedditController):
         elif not n == 0:
             hd = difflib.HtmlDiff()
             self.messages.append("Viewing version: %s"  % str(n))
-            t = hd.make_table(edit.content.split('\n'), wiki.content.content.split('\n'), fromdesc="Version %d" % ver, todesc="Current")
+            t = hd.make_table(edit.content.split('\n'), wiki.content.content.split('\n'), fromdesc="Version %d" % self.ver, todesc="Current")
             page = edit.content
             self.messages.append(str(t))
         else:
@@ -69,7 +75,7 @@ class WikiController(RedditController):
         if self.act == 'get':
             return safemarkdown(page) # Should be inside json and not filtered
 
-        content = WikiView(wikiname = f_wikiname, edit = edit, history = history, can_edit = c.user_is_loggedin and self.sr.can_submit(c.user) and ver is 0, messages = self.messages, num = num_edits, unedited_page_content = page, page_content = safemarkdown(page))
+        content = WikiView(wikiname = f_wikiname, s_wikiname = wikiname, base_url = self.base_url, edit = edit, history = history, can_edit = c.user_is_loggedin and self.sr.can_submit(c.user) and self.ver is 0, messages = self.messages, num = num_edits, unedited_page_content = page, page_content = safemarkdown(page))
         return WikiPage(f_wikiname, content = content).render()
 
     def POST_wiki(self, wikiname = "index"):

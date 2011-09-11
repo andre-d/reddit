@@ -31,12 +31,19 @@ def make_map(global_conf={}, app_conf={}):
     mc = map.connect
 
     admin_routes.add(mc)
+    
+    mc("/wiki/e/:edit_id", controller='wiki', action="wiki")
+    mc("/wiki/e/:edit_id/*wikiname", controller='wiki', action='wiki')
+    mc('/reddits/wiki/e/:edit_id', controller='wiki', action='wiki')
+    mc('/reddits/wiki/e/:edit_id/*wikiname', controller='wiki', action='wiki')
+    
     mc("/wiki", controller='wiki', action="wiki")
     mc("/wiki/*wikiname", controller='wiki', action='wiki')
     mc('/reddits/wiki', controller='wiki', action='wiki')
     mc('/reddits/wiki/*wikiname', controller='wiki', action='wiki')
+   
     mc('/login',    controller='forms', action='login')
-    mc('/register',    controller='forms', action='register')
+    mc('/register', controller='forms', action='register')
     mc('/logout',   controller='forms', action='logout')
     mc('/verify',   controller='forms', action='verify')
     mc('/adminon',  controller='forms', action='adminon')
