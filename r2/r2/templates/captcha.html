@@ -24,7 +24,7 @@
 ${captchagen()}
 
 <%def name="captchagen()">
-${unsafe(get_captcha_html(g.recaptcha_key_public))}
+${unsafe(get_captcha_html(g.recaptcha_key_public, request.host in g.secure_domains))}
 ${error_field("BAD_CAPTCHA", "recaptcha_challenge_field")}
 </%def>
 

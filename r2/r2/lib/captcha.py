@@ -21,8 +21,8 @@
 ################################################################################
 from recaptcha.client import captcha
 
-def get_captcha_html(public_key):
-    return captcha.displayhtml(public_key)
+def get_captcha_html(public_key, use_ssl = False):
+    return captcha.displayhtml(public_key, use_ssl = use_ssl)
 
 def validate_captcha(challenge, response, ip, private_key):
     response = captcha.submit(challenge, response, private_key, ip)
