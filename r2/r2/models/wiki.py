@@ -11,7 +11,12 @@ class Wiki(Thing):
     def _by_name(cls, name, sr):
         w = cls._query(cls.c.name == name, cls.c.sr == sr, limit = 1)
         return list(w)[0]
-        
+    
+    @classmethod
+    def _by_id(cls, edit_id):
+        e = cls._query(cls.c._id == edit_id, limit = 1)
+        return list(e)[0]
+    
     @classmethod
     def _new(cls, name, sr, text, account):
         w = Wiki(name = name, sr = sr._id)
@@ -37,6 +42,11 @@ class Wiki(Thing):
 
 class WikiEdit(Thing):
     _defaults = dict(content = str(), hidden = False, when = None, account = None, wiki = None)
+    
+    @classmethod
+    def _by_id(cls, edit_id):
+        e = cls._query(cls.c._id == edit_id, limit = 1)
+        return list(e)[0]
     
     @classmethod
     def _new(cls, content, account, wiki):

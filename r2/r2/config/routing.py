@@ -32,15 +32,25 @@ def make_map(global_conf={}, app_conf={}):
 
     admin_routes.add(mc)
     
-    mc("/wiki/v:edit_id", controller='wiki', action="wiki")
+    mc("/wiki/edit/:wiki_id", controller='wiki', action="edit")
+    mc("/wiki/hide/v:edit_id", controller='wiki', action="hide")
+    
+    mc("/reddits/wiki/history/:wikiname", controller='wiki', action="history")
+    mc("/wiki/history/:wikiname", controller='wiki', action="history")
+    
+    mc("/reddits/wiki/history", controller='wiki', action="history")
+    mc("/wiki/history", controller='wiki', action="history")
+    
     mc("/wiki/:wikiname/v:edit_id", controller='wiki', action='wiki')
     mc('/reddits/wiki/v:edit_id', controller='wiki', action='wiki')
     mc('/reddits/wiki/:wikiname/v:edit_id', controller='wiki', action='wiki')
+    mc("/wiki/v:edit_id", controller='wiki', action="wiki")
+    
+    mc("/wiki/:wikiname", controller='wiki', action='wiki')
+    mc('/reddits/wiki/:wikiname', controller='wiki', action='wiki')
     
     mc("/wiki", controller='wiki', action="wiki")
-    mc("/wiki/:wikiname", controller='wiki', action='wiki')
     mc('/reddits/wiki', controller='wiki', action='wiki')
-    mc('/reddits/wiki/:wikiname', controller='wiki', action='wiki')
    
     mc('/login',    controller='forms', action='login')
     mc('/register', controller='forms', action='register')

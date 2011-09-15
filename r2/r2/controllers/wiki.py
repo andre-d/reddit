@@ -26,6 +26,10 @@ class WikiController(RedditController):
         self.base_url = '/wiki' if c.site.name == " reddit.com" else '/r/'+c.site.name+'/wiki'
         self.sr = Subreddit._by_name(self.wiki_sr)
         self.messages = []
+        try:
+            self.messages.append(request.GET['message'])
+        except:
+            pass
         self.act = self.get_request_var('act')
 
     def getFullWikiName(self, wikiname):
@@ -72,40 +76,35 @@ class WikiController(RedditController):
         
         f_wikiname = self.getFullWikiName(wikiname)
 
-        if self.act == 'get':
-            return safemarkdown(page) # Should be inside json and not filtered
-
-        content = WikiView(wikiname = f_wikiname, s_wikiname = wikiname, base_url = self.base_url, edit = edit, history = history, can_edit = c.user_is_loggedin and self.sr.can_submit(c.user) and self.ver is 0, messages = self.messages, num = num_edits, unedited_page_content = page, page_content = safemarkdown(page))
+        content = WikiView(wikiname = f_wikiname, s_wikiname = wikiname, wiki_id = wiki._id, base_url = self.base_url, edit = edit, history = history, can_edit = c.user_is_loggedin and self.sr.can_submit(c.user) and self.ver is 0, messages = self.messages, num = num_edits, unedited_page_content = page, page_content = safemarkdown(page))
         return WikiPage(f_wikiname, content = content).render()
 
-    def POST_wiki(self, wikiname = "index"):
+    def POST_edit(self, wiki_id):
         self.messages=["Cannot edit"]
         if self.act == 'hide':
             self.messages = ["cannit hide"]
         
-        try:
-            wiki = self.sr.get_wiki(wikiname)
-        except:
-            wiki = None
+        wiki = Wiki._by_id(wiki_id)
         
         if c.user_is_loggedin and self.sr.can_submit(c.user):
-            if self.act == "hide":
-                w = wiki.hist[ver-1]
-                w.hidden = True
-                w._commit()
-            else:
-                try:
-                    diff = wiki.edit_count != int(request.POST['orig-page'])
-                    # We should also just silently fail if no changes were made
-                except:
-                    diff = False
-                message = ["Error, old version was not the same as yours\n"]
-                if not diff: # We should attempt a merge, difflib cannot do that directly
-                    if wiki:
-                        wiki.edit(c.user, request.POST['page'])
-                        self.messages = ["Edited"]
-                    else:
-                        self.sr.add_wiki(wikiname, request.POST['page'])
-                        self.messages = ["Added"]
+            try:
+                diff = wiki.edit_count != int(request.POST['orig-page'])
+                # We should also just silently fail if no changes were made
+            except:
+                diff = False
+            message = ["Error, old version was not the same as yours\n"]
+            if not diff: # We should attempt a merge, difflib cannot do that directly
+                if wiki:
+                    wiki.edit(c.user, request.POST['page'])
+                    self.messages = ["Edited"]
+                else:
+                    self.sr.add_wiki(wikiname, request.POST['page'])
+                    self.messages = ["Added"]
         self.sr = Subreddit._by_name(self.wiki_sr, _update = True)
-        return self.GET_wiki(wikiname)
+        return self.redirect(request.POST['redirect']+"?message="+self.messages[0])
+    
+    def POST_hide(self, edit_id):
+        edit = WikiEdit._by_id(edit_id)
+        edit.hidden = True
+        edit._commit()
+        

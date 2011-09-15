@@ -6,12 +6,13 @@ from pylons.i18n import _
 
 class WikiView(Templated):
     """Compose message form."""
-    def __init__(self, wikiname = None, s_wikiname = None, base_url = '/wiki/', edit = None, history={}, num=0, messages = None, can_edit = False, unedited_page_content=None, page_content=None):
+    def __init__(self, wikiname = None, wiki_id = None, s_wikiname = None, base_url = '/wiki/', edit = None, history={}, num=0, messages = None, can_edit = False, unedited_page_content=None, page_content=None):
         self.page_content = page_content
         self.history = history
         self.num = num
         self.wikibase = base_url
         self.edit_id = -1
+        self.wiki_id = wiki_id
         self.edit_username = "Unknown"
         try:
             self.edit_id = edit._id

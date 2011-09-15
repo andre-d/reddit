@@ -36,10 +36,11 @@ Edit by user: ${thing.edit_username}
     </div>
 </div>
 %if thing.can_edit:
-<form method="post">
+<form method="post" action="/wiki/edit/${thing.wiki_id}">
     <div class="usertext-edit">
         <div>
             <input type="hidden" name="orig-page" value="${thing.num}" />
+            <input type="hidden" name="redirect" value="${thing.wikibase}/${thing.wikiname}" />
             <textarea name="page">${unsafe(thing.unedited_page_content)}</textarea>
         </div>
     </div>
