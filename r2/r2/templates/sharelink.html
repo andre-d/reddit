@@ -80,10 +80,8 @@
       </tr>
        <tr><td></td><td>
       %if thing.captcha:
-       
-            <div class="captchagen ${g.recaptcha_key_public} ${_("cancel")} ${_("share")} ${c.lang}">Error with captcha</div>
+            <div class="captchagen inglip-summoned" data-key="${g.recaptcha_key_public}">Error with captcha</div>
             ${error_field("BAD_CAPTCHA", "recaptcha_challenge_field")}
-        
       %else:
           <button type="submit" class="btn">
             ${_("share")}
@@ -91,9 +89,8 @@
           <button class="btn" 
                   onclick="return cancelShare(this);">
             ${_("cancel")}
-          </button>
-          
-          %endif
+          </button>    
+      %endif
           
           <span class="status error"></span>
         </td>

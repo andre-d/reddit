@@ -65,7 +65,7 @@ def form_validate_captcha(captcha, form):
         Since this forces us to refresh the captcha, this should be called as late as possible.
     """
     if not bool_validate_captcha(captcha):
-        c.errors.add(errors.BAD_CAPTCHA, field = 'recaptcha_challenge_field')
+        c.errors.add(errors.BAD_CAPTCHA, field='recaptcha_challenge_field')
         form.set_error(errors.BAD_CAPTCHA, 'recaptcha_challenge_field')
         return False
     return True
@@ -123,7 +123,7 @@ class ApiController(RedditController):
         else:
             return {}
 
-    @validatedForm(captcha = VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
+    @validatedForm(captcha=VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
                    name=VRequired('name', errors.NO_NAME),
                    email=ValidEmails('email', num = 1),
                    reason = VOneOf('reason', ('ad_inq', 'feedback', "i18n")),
@@ -156,7 +156,7 @@ class ApiController(RedditController):
                    to = VMessageRecipient('to'),
                    subject = VRequired('subject', errors.NO_SUBJECT),
                    body = VMarkdown(['text', 'message']),
-                   captcha = VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']))
+                   captcha=VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']))
     def POST_compose(self, form, jquery, to, subject, body, ip, captcha):
         """
         handles message composition under /message/compose.
@@ -175,7 +175,7 @@ class ApiController(RedditController):
     @validatedForm(VUser(),
                    VRatelimit(rate_user = True, rate_ip = True,
                               prefix = "rate_submit_"),
-                   captcha = VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
+                   captcha=VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
                    ip = ValidIP(),
                    sr = VSubmitSR('sr', 'kind'),
                    url = VUrl(['url', 'sr']),
@@ -397,7 +397,7 @@ class ApiController(RedditController):
             self._login(responder, user, rem)
 
     @validatedForm(VRatelimit(rate_ip = True, prefix = "rate_register_"),
-                   captcha = VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
+                   captcha=VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
                    name = VUname(['user']),
                    email = ValidEmails("email", num = 1),
                    password = VPassword(['passwd', 'passwd2']),
@@ -912,7 +912,7 @@ class ApiController(RedditController):
                    VModhash(),
                    VRatelimit(rate_user = True, rate_ip = True,
                               prefix = "rate_share_"),
-                   captcha = VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
+                   captcha=VCaptcha(['recaptcha_challenge_field','recaptcha_response_field']),
                    share_from = VLength('share_from', max_length = 100),
                    emails = ValidEmails("share_to"),
                    reply_to = ValidEmails("replyto", num = 1), 

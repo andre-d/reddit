@@ -398,9 +398,7 @@ function share(elem) {
         if(!window.Recaptcha){
             $('<script>').attr('src', "http://api.recaptcha.net/js/recaptcha_ajax.js").appendTo('body')
         }
-        
-        keys = [];
-        keys = newelem.attr('class').split(' ');
+        keys = ["", newelem.data('key'), r.strings.canceltext, r.strings.sharetext, reddit.lang];
         newelem.empty();
         $('<div>').attr('id', 'recaptcha_div_' + id).appendTo(newelem);
         

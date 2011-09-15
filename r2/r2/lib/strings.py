@@ -78,7 +78,10 @@ string_dict = dict(
     friends = _('to view reddit with only submissions from your friends, use [reddit.com/r/friends](%s)'),
 
     sr_created = _('your reddit has been created'),
-
+    
+    canceltext = _("cancel"),
+    sharetext=   _("share"),
+    
     active_trials = _("we haven't yet decided whether these things are spam, so you have a chance to change your vote:"),
     finished_trials = _("it's too late to change your vote on these things (the verdict has been issued):"),
     more_info_link = _("visit [%(link)s](%(link)s) for more information"),
