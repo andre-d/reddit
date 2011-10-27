@@ -100,6 +100,7 @@ def upload_media(image, never_expire=True, file_type='.jpg'):
             if img.format == "PNG" and file_type == ".png":
                 img.verify()
                 f.write(image)
+                f.close()
                 do_convert = False
 
         if do_convert:
