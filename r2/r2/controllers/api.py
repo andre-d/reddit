@@ -46,6 +46,7 @@ from r2.lib.strings import strings
 from r2.lib.filters import _force_unicode, websafe_json, websafe, spaceCompress
 from r2.lib.db import queries
 from r2.lib.db.queries import changed
+from r2.lib.db import tdb_cassandra
 from r2.lib import promote
 from r2.lib.media import force_thumbnail, thumbnail_url
 from r2.lib.comment_tree import delete_comment
@@ -54,6 +55,8 @@ from r2.lib.subreddit_search import search_reddits
 from r2.lib.log import log_text
 from r2.lib.filters import safemarkdown
 from r2.lib.scraper import str_to_image
+
+from r2.models.wiki import WikiPage
 
 import csv
 from collections import defaultdict
@@ -1084,9 +1087,10 @@ class ApiController(RedditController):
                    VModhash(),
                    # nop is safe: handled after auth checks below
                    stylesheet_contents = nop('stylesheet_contents'),
+                   prevstyle = VLength('prevstyle', max_length = 256),
                    op = VOneOf('op',['save','preview']))
     def POST_subreddit_stylesheet(self, form, jquery,
-                                  stylesheet_contents = '', op='save'):
+                                  stylesheet_contents = '', prevstyle='', op='save'):
         if not c.site.can_change_stylesheet(c.user):
             return self.abort(403,'forbidden')
 
@@ -1113,7 +1117,12 @@ class ApiController(RedditController):
             jquery.apply_stylesheet(stylesheet_contents_parsed)
         if not report.errors and op == 'save':
             c.site.stylesheet_contents      = stylesheet_contents_parsed
-            c.site.stylesheet_contents_user = stylesheet_contents
+            
+            try:
+                wiki = WikiPage.get(c.site.name, 'config/stylesheet')
+            except tdb_cassandra.NotFound:
+                wiki = WikiPage.create(c.site.name, 'config/stylesheet')
+            wiki.revise(stylesheet_contents, previous=prevstyle, author=c.user.name)
 
             c.site.stylesheet_hash = md5(stylesheet_contents_parsed).hexdigest()
 
@@ -1297,6 +1306,7 @@ class ApiController(RedditController):
                    header_title = VLength("header-title", max_length = 500),
                    domain = VCnameDomain("domain"),
                    description = VMarkdown("description", max_length = 5120),
+                   prevdesc = VLength('prevdesc', max_length = 256),
                    lang = VLang("lang"),
                    over_18 = VBoolean('over_18'),
                    allow_top = VBoolean('allow_top'),
@@ -1317,11 +1327,16 @@ class ApiController(RedditController):
 
         redir = False
         kw = dict((k, v) for k, v in kw.iteritems()
-                  if k in ('name', 'title', 'domain', 'description', 'over_18',
+                  if k in ('name', 'title', 'domain', 'description', 'prevdesc', 'over_18',
                            'show_media', 'show_cname_sidebar', 'type', 'link_type', 'lang',
                            "css_on_cname", "header_title", 
                            'allow_top'))
-
+        
+        description = kw['description']
+        prevdesc = kw['prevdesc']
+        del kw['description']
+        del kw['prevdesc']
+        
         #if a user is banned, return rate-limit errors
         if c.user._spam:
             time = timeuntil(datetime.now(g.tz) + timedelta(seconds=600))
@@ -1402,7 +1417,14 @@ class ApiController(RedditController):
         # don't go any further until the form validates
         if form.has_error():
             return
-        elif redir:
+        
+        try:
+            wiki = WikiPage.get(sr.name, 'config/sidebar')
+        except tdb_cassandra.NotFound:
+            wiki = WikiPage.create(sr.name, 'config/sidebar')
+        wiki.revise(description, previous=prevdesc, author=c.user.name)
+        
+        if redir:
             form.redirect(redir)
         else:
             jquery.refresh()

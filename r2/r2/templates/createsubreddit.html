@@ -86,6 +86,10 @@
      ${UserText(None, text = "", creating = True, name="description", have_form = False)}
     %endif
   </%utils:line_field>
+  
+  %if thing.site:
+        <input type="hidden" name="prevdesc" value="${thing.site.prevdesc}"/>
+  %endif
 
   <%utils:line_field title="${_('language')}">
     <div class="delete-field">

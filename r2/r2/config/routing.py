@@ -31,7 +31,15 @@ def make_map(global_conf={}, app_conf={}):
     mc = map.connect
 
     admin_routes.add(mc)
-
+    
+    
+    mc('/wiki/create/*page', controller='wiki', action='wikiCreate')
+    mc('/wiki/edit/*page', controller='wiki', action='wikiRevise')
+    mc('/wiki/revisions/*page', controller='wiki', action='wikiRevisions')
+    mc('/wiki/settings/*page', controller='wiki', action='wikiSettings')
+    mc('/wiki/*page', controller='wiki', action='wikiPage')
+    mc('/wiki/', controller='wiki', action='wikiPage')
+    
     mc('/login',    controller='forms', action='login')
     mc('/register',    controller='forms', action='register')
     mc('/logout',   controller='forms', action='logout')
@@ -64,7 +72,7 @@ def make_map(global_conf={}, app_conf={}):
     mc('/reddits/mine/:where', controller='myreddits', action='listing',
        where='subscriber',
        requirements=dict(where='subscriber|contributor|moderator'))
-
+    
     mc('/buttons', controller='buttons', action='button_demo_page')
     mc('/upgradebuttons', controller='buttons', action='upgrade_buttons')
     #the frame

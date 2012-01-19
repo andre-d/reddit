@@ -1,0 +1,19 @@
+<form method="post">
+    Who can edit this page?<br/>
+    <input type="radio" name="permlevel" id="permlevel0" value="0"
+    %if thing.permlevel == 0:
+        checked
+    %endif
+    /><label for="permlevel0">Anyone may edit</label><br/>
+    <input type="radio" name="permlevel" id="permlevel1" value="1"
+    %if thing.permlevel == 1:
+        checked
+    %endif
+    /><label for="permlevel1">Only mods may edit</label><br/>
+    <input type="radio" name="permlevel" id="permlevel2" value="2"
+    %if thing.permlevel == 2:
+        checked
+    %endif
+    /><label for="permlevel2">Only mods may edit and view</label><br/>
+    <input type="submit" value="Save Settings" />
+</form>
