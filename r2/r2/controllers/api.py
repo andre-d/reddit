@@ -32,9 +32,10 @@ from r2.models import *
 from r2.lib.utils import get_title, sanitize_url, timeuntil, set_last_modified
 from r2.lib.utils import query_string, timefromnow, randstr
 from r2.lib.utils import timeago, tup, filter_links
-from r2.lib.pages import EnemyList, FriendList, ContributorList, ModList, \
-    BannedList, BoringPage, FormPage, CssError, UploadedImage, ClickGadget, \
-    UrlParser, WrappedUser, BoringPage
+from r2.lib.pages import (EnemyList, FriendList, ContributorList, ModList,
+    BannedList, WikiBannedList, WikiMayContributeList,
+    BoringPage, FormPage, CssError, UploadedImage, ClickGadget,
+    UrlParser, WrappedUser)
 from r2.lib.pages import FlairList, FlairCsv, FlairTemplateEditor, \
     FlairSelector
 from r2.lib.utils.trial_utils import indict, end_trial, trial_info
@@ -46,6 +47,7 @@ from r2.lib.strings import strings
 from r2.lib.filters import _force_unicode, websafe_json, websafe, spaceCompress
 from r2.lib.db import queries
 from r2.lib.db.queries import changed
+from r2.lib.db import tdb_cassandra
 from r2.lib import promote
 from r2.lib.media import force_thumbnail, thumbnail_url
 from r2.lib.comment_tree import delete_comment
@@ -55,6 +57,9 @@ from r2.lib.log import log_text
 from r2.lib.filters import safemarkdown
 from r2.lib.scraper import str_to_image
 from r2.controllers.api_docs import api_doc, api_section
+
+from r2.models.wiki import WikiPage
+from r2.lib.merge import ConflictException
 
 import csv
 from collections import defaultdict
@@ -470,8 +475,9 @@ class ApiController(RedditController):
                 nuser = VExistingUname('name'),
                 iuser = VByName('id'),
                 container = nop('container'),
-                type = VOneOf('type', ('friend', 'enemy', 'moderator', 
-                                       'contributor', 'banned')))
+                type = VOneOf('type', ('friend', 'enemy', 'moderator',
+                                       'wikicontribute', 'banned'
+                                       'wikibanned', 'contributor')))
     @api_doc(api_section.users)
     def POST_unfriend(self, nuser, iuser, container, type):
         """
@@ -481,7 +487,7 @@ class ApiController(RedditController):
         or by fullname (iuser).  If type is friend or enemy, 'container'
         will be the current user, otherwise the subreddit must be set.
         """
-        sr_types = ('moderator', 'contributor', 'banned')
+        sr_types = ('moderator', 'contributor', 'banned', 'wikibanned', 'wikicontribute')
         if type in sr_types:
             container = c.site
         else:
@@ -507,7 +513,8 @@ class ApiController(RedditController):
 
         # Log this action
         if new and type in sr_types:
-            action = dict(banned='unbanuser', moderator='removemoderator', 
+            action = dict(banned='unbanuser', wikicontribute='unwikicontribute',
+                          wikibanned='unwikiban', moderator='removemoderator',
                           contributor='removecontributor').get(type, None)
             ModAction.create(container, c.user, action, target=victim)
 
@@ -522,8 +529,8 @@ class ApiController(RedditController):
                    ip = ValidIP(),
                    friend = VExistingUname('name'),
                    container = nop('container'),
-                   type = VOneOf('type', ('friend', 'moderator',
-                                          'contributor', 'banned')),
+                   type = VOneOf('type', ('friend', 'moderator', 'wikicontribute',
+                                          'contributor', 'banned', 'wikibanned')),
                    note = VLength('note', 300))
     @api_doc(api_section.users)
     def POST_friend(self, form, jquery, ip, friend,
@@ -559,8 +566,9 @@ class ApiController(RedditController):
 
         # Log this action
         if new and type in sr_types:
-            action = dict(banned='banuser', moderator='addmoderator', 
-                          contributor='addcontributor').get(type, None)
+            action = dict(banned='banuser', moderator='addmoderator',
+                          wikicontribute='wikicontribute',
+                          contributor='addcontributor', wikibanned='wikibanned').get(type, None)
             ModAction.create(container, c.user, action, target=friend)
 
         if type == "friend" and c.user.gold:
@@ -576,7 +584,8 @@ class ApiController(RedditController):
         cls = dict(friend=FriendList,
                    moderator=ModList,
                    contributor=ContributorList,
-                   banned=BannedList).get(type)
+                   wikicontribute=WikiMayContributeList,
+                   banned=BannedList,wikibanned=WikiBannedList).get(type)
         form.set_inputs(name = "")
         form.set_html(".status:first", _("added"))
         if new and cls:
@@ -1151,20 +1160,17 @@ class ApiController(RedditController):
                    VModhash(),
                    # nop is safe: handled after auth checks below
                    stylesheet_contents = nop('stylesheet_contents'),
+                   prevstyle = VLength('prevstyle', max_length = 256),
                    op = VOneOf('op',['save','preview']))
     @api_doc(api_section.subreddits)
     def POST_subreddit_stylesheet(self, form, jquery,
-                                  stylesheet_contents = '', op='save'):
-        if not c.site.can_change_stylesheet(c.user):
+                                  stylesheet_contents = '', prevstyle='', op='save'):
+        
+        report, parsed = c.site.parse_css(stylesheet_contents)
+        
+        if not report:
             return self.abort(403,'forbidden')
-
-        if g.css_killswitch:
-            return self.abort(403,'forbidden')
-
-        # validation is expensive.  Validate after we've confirmed
-        # that the changes will be allowed
-        parsed, report = cssfilter.validate_css(stylesheet_contents)
-
+        
         if report.errors:
             error_items = [ CssError(x).render(style='html')
                             for x in sorted(report.errors) ]
@@ -1174,28 +1180,34 @@ class ApiController(RedditController):
             return
         else:
             form.find('.errors').hide()
+            form.find('#conflict_box').hide()
             form.set_html(".errors ul", '')
 
-        stylesheet_contents_parsed = parsed.cssText if parsed else ''
-        # if the css parsed, we're going to apply it (both preview & save)
-        jquery.apply_stylesheet(stylesheet_contents_parsed)
+        stylesheet_contents_parsed = parsed if parsed else ''
         if op == 'save':
             c.site.stylesheet_contents      = stylesheet_contents_parsed
-            c.site.stylesheet_contents_user = stylesheet_contents
-
-            c.site.stylesheet_hash = md5(stylesheet_contents_parsed).hexdigest()
-
-            set_last_modified(c.site,'stylesheet_contents')
-
-            c.site._commit()
-
-            ModAction.create(c.site, c.user, action='editsettings', 
-                             details='stylesheet')
-
-            form.set_html(".status", _('saved'))
-            form.set_html(".errors ul", "")
-
-        elif op == 'preview':
+            
+            try:
+                wiki = WikiPage.get(c.site.name, 'config/stylesheet')
+            except tdb_cassandra.NotFound:
+                wiki = WikiPage.create(c.site.name, 'config/stylesheet')
+            
+            try:
+                c.site.change_css(stylesheet_contents, parsed, prevstyle)
+                form.find('.conflict_box').hide()
+                form.find('.errors').hide()
+                form.set_html(".status", _('saved'))
+                form.set_html(".errors ul", "")
+            except ConflictException as e:
+                form.set_html(".status", _('conflict error'))
+                form.set_html(".errors ul", 'There was a conflict while editing the stylesheet')
+                form.find('#conflict_box').show()
+                form.set_inputs(conflict_old = e.your, stylesheet_contents = e.new)
+                form.set_html('#conflict_diff', e.htmldiff)
+                form.find('.errors').show()
+                return
+        jquery.apply_stylesheet(parsed)
+        if op == 'preview':
             # try to find a link to use, otherwise give up and
             # return
             links = cssfilter.find_preview_links(c.site)
@@ -1367,6 +1379,7 @@ class ApiController(RedditController):
                    domain = VCnameDomain("domain"),
                    public_description = VMarkdown("public_description", max_length = 500),
                    description = VMarkdown("description", max_length = 5120),
+                   prevdesc = VLength('prevdesc', max_length = 256),
                    lang = VLang("lang"),
                    over_18 = VBoolean('over_18'),
                    allow_top = VBoolean('allow_top'),
@@ -1374,6 +1387,8 @@ class ApiController(RedditController):
                    show_cname_sidebar = VBoolean('show_cname_sidebar'),
                    type = VOneOf('type', ('public', 'private', 'restricted', 'archived')),
                    link_type = VOneOf('link_type', ('any', 'link', 'self')),
+                   wikimode = VOneOf('wikimode', ('disabled', 'modonly', 'anyone')),
+                   wiki_edit_karma = VInt("wiki_edit_karma", coerce=False, min=0),
                    ip = ValidIP(),
                    sponsor_text =VLength('sponsorship-text', max_length = 500),
                    sponsor_name =VLength('sponsorship-name', max_length = 64),
@@ -1388,11 +1403,17 @@ class ApiController(RedditController):
 
         redir = False
         kw = dict((k, v) for k, v in kw.iteritems()
-                  if k in ('name', 'title', 'domain', 'description', 'over_18',
+                  if k in ('name', 'title', 'domain', 'description', 'prevdesc', 'over_18',
                            'show_media', 'show_cname_sidebar', 'type', 'link_type', 'lang',
-                           "css_on_cname", "header_title", 
+                           'css_on_cname', 'header_title', 
+                           'wikimode', 'wiki_edit_karma',
                            'allow_top', 'public_description'))
-
+        
+        description = kw['description']
+        prevdesc = kw['prevdesc']
+        del kw['description']
+        del kw['prevdesc']
+        
         #if a user is banned, return rate-limit errors
         if c.user._spam:
             time = timeuntil(datetime.now(g.tz) + timedelta(seconds=600))
@@ -1474,7 +1495,23 @@ class ApiController(RedditController):
         # don't go any further until the form validates
         if form.has_error():
             return
-        elif redir:
+        
+        try:
+            wiki = WikiPage.get(sr.name, 'config/sidebar')
+        except tdb_cassandra.NotFound:
+            wiki = WikiPage.create(sr.name, 'config/sidebar')
+        try:
+            wiki.revise(description, previous=prevdesc, author=c.user.name)
+        except ConflictException as e:
+            c.errors.add(errors.CONFLICT, field = "description")
+            form.has_errors("description", errors.CONFLICT)
+            form.parent().set_html('.status', _("Description not saved"))
+            form.find('#conflict_box').show()
+            form.set_inputs(conflict_old = e.your, description = e.new)
+            form.set_html('#conflict_diff', e.htmldiff)
+            return
+        
+        if redir:
             form.redirect(redir)
         else:
             jquery.refresh()

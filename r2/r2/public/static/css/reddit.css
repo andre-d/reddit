@@ -889,6 +889,137 @@ a.author { margin-right: 0.5em; }
     margin: 15px;
 }
 
+.wikititle strong {
+    font-weight: bold;
+}
+
+.wikititle { 
+    color: #666;
+}
+
+.wiki {
+    margin-top: 15px;
+}
+
+.wiki .fancy-settings .toggle {
+    display: inline-block;
+    padding-right: 15px;
+}
+
+.wiki input {
+    margin: 5px;
+    padding: 2px;
+    margin-left: 0;
+}
+
+#content.wiki {
+    margin-right: 315px;
+}
+.discussionlink {
+    display: inline-block;
+    margin-left: 15px;
+    padding-right: 50px;
+}
+
+.discussionlink a {
+    padding-left: 15px;
+}
+
+.wikirevisionlisting table tr td {
+    padding-right: 15px;
+}
+
+.wiki .pagelisting ul {
+    list-style: disc;
+    padding: 2px;
+    padding-left: 10px;
+}
+
+.wiki .revision {
+    transition: opacity 500ms;
+    -o-transition: opacity 500ms;
+    -ms-transition: opacity 500ms;
+    -moz-transition: opacity 500ms;
+    -webkit-transition: opacity 500ms;
+}
+
+.wiki .revision.hidden {
+    opacity: .5;
+}
+
+.wikiactions {
+    margin-left: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    vertical-align: middle;
+}
+
+.wikiactions .wikiaction {
+    background: None center left no-repeat;
+}
+
+.wikiactions .wikiaction-index {
+    background-image: url(../house.png);
+}
+
+.wikiactions .wikiaction-revisions {
+    background-image: url(../report.png);
+}
+
+.wikiactions .wikiaction-pages {
+    background-image: url(../page_white_copy.png);
+}
+
+.pageactions {
+    font-size: larger;
+    margin-left: 25px;
+    border-radius: 7px;
+    background-color: white;
+    border: 1px solid grey;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    
+}
+
+.wikiaction {
+    background-color: white;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-radius: 5px;
+}
+
+.wikititle {
+    display: inline;
+    vertical-align: middle;
+}
+
+.wikiactions .wikiaction {
+    padding-right: 24px;
+    padding-left: 24px;
+}
+
+.pageactions .wikiaction {
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+.pageactions .wikiaction:hover {
+    background-color: #CEE3F8;
+}
+
+.pageactions .wikiaction-current:hover {
+    background-color: #5F99CF;
+}
+
+.wikiactions .wikiaction-current {
+    font-weight: bold;
+}
+
+.pageactions .wikiaction-current {
+    color: white;
+    background-color: #5F99CF;
+}
+
 /* organic listing */
 .organic-listing {
     border: solid 1px gray;
@@ -1090,6 +1221,7 @@ a.author { margin-right: 0.5em; }
 .md em { font-style: italic; }
 .md strong em { font-style: italic; font-weight: bold }
 .md img { display: none }
+.md.wiki img { display: block }
 .md ol, .md ul { margin: 10px 2em; }
 .md ul { list-style: disc outside }
 .md ol { list-style: decimal outside }
@@ -5394,3 +5526,10 @@ tr.gold-accent + tr > td {
 #classy-error .md {
     display: inline-block;
 }
+
+table.diff {font-size: small;}
+.diff_header {background-color:lightgrey}
+.diff_next {background-color:lightgrey}
+.diff_add {background-color:lightgreen}
+.diff_chg {background-color:yellow}
+.diff_sub {background-color:lightcoral}

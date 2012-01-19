@@ -1,0 +1,12 @@
+<%!
+   from r2.lib.template_helpers import get_domain
+%>
+
+${thing.listing}
+
+<div class="morelink discussionlink">
+<a href="/submit?url=http://${get_domain()}/wiki/${c.page}">${_("Submit a Discussion")}
+<div class="nub"></div>
+</a>
+</div>
+

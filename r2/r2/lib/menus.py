@@ -133,6 +133,9 @@ menu =   MenuHandler(hot          = _('hot'),
                      flair        = _("edit flair"),
                      log          = _("moderation log"),
                      modqueue     = _("moderation queue"),
+                     
+                     wikibanned        = _("ban wiki contributors"),
+                     wikicontribute  = _("add wiki contributors"),
 
                      popular      = _("popular"),
                      create       = _("create"),

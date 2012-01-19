@@ -31,7 +31,26 @@ def make_map(global_conf={}, app_conf={}):
     mc = map.connect
 
     admin_routes.add(mc)
-
+    
+    
+    mc('/wiki/create/*page', controller='wiki', action='wikiCreate')
+    mc('/wiki/edit/*page', controller='wiki', action='wikiRevise')
+    mc('/wiki/revisions/*page', controller='wiki', action='wikiRevisions')
+    mc('/wiki/settings/*page', controller='wiki', action='wikiSettings')
+    mc('/wiki/discussions/*page', controller='wiki', action='wikiDiscussions')
+    mc('/wiki/revisions', controller='wiki', action='wikiRecent')
+    mc('/wiki/pages', controller='wiki', action='wikiListing')
+    
+    mc('/wiki/api/edit/*page', controller='wikiapi', action='wikiEdit')
+    mc('/wiki/api/hide/:revision/*page', controller='wikiapi', action='wikiRevisionHide')
+    mc('/wiki/api/revert/:revision/*page', controller='wikiapi', action='wikiRevisionRevert')
+    mc('/wiki/api/alloweditor/:act/:user/*page', controller='wikiapi', action='wikiAllowEditor')
+    
+    mc('/wiki/*page', controller='wiki', action='wikiPage')
+    mc('/wiki/', controller='wiki', action='wikiPage')
+    
+    mc('/w/*page', controller='wiki', action='wiki_redirect')
+    
     mc('/login',    controller='forms', action='login')
     mc('/register',    controller='forms', action='register')
     mc('/logout',   controller='forms', action='logout')
@@ -65,7 +84,7 @@ def make_map(global_conf={}, app_conf={}):
     mc('/reddits/mine/:where', controller='myreddits', action='listing',
        where='subscriber',
        requirements=dict(where='subscriber|contributor|moderator'))
-
+    
     mc('/buttons', controller='buttons', action='button_demo_page')
     mc('/upgradebuttons', controller='buttons', action='upgrade_buttons')
     #the frame
@@ -184,7 +203,7 @@ def make_map(global_conf={}, app_conf={}):
        requirements=dict(action="random|framebuster|selfserviceoatmeal"))
     mc('/:action', controller='embed',
        requirements=dict(action="help|blog|faq"))
-    mc('/help/*anything', controller='embed', action='help')
+    mc('/help/*page', controller='wiki', action='wikiPage')
 
     mc('/goto', controller='toolbar', action='goto')
     mc('/tb/:id', controller='toolbar', action='tb')

@@ -1,0 +1,42 @@
+﻿<%def name="actionsbar(actions)">
+    %for action in actions:
+        <a class="wikiaction wikiaction-${action[0]}
+        %if action[0] == thing.action[0]:
+            wikiaction-current
+        %endif
+        "
+        %if action[2]:
+            href="${thing.base_url}/${action[0]}/${c.page}"
+        %else:
+            href="${thing.base_url}/${action[0]}"
+        %endif
+        >${action[1]}</a>
+    %endfor
+</%def>
+
+<div class="content">
+    <span>
+    <h1 class="wikititle">
+    %if thing.title:
+        ${thing.title}
+        %if c.page:
+            |&nbsp;<strong>${c.page}</strong>
+        %endif
+    %endif
+    </h1>
+    %if thing.pageactions:
+        <span class="pageactions">
+            ${actionsbar(thing.pageactions)}
+        </span>
+    %endif
+    </span>
+    <div id="content" class="wiki">
+        ${thing.content}
+    </div>
+     <hr/>
+    <span class="wikiactions">
+        ${actionsbar(thing.globalactions)}
+    </span>
+</div>
+
+<!--Reddit wikis are powered by Cray-1™ supercomputers-->

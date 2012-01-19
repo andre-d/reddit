@@ -32,6 +32,9 @@ from listingcontroller import CommentsController
 
 from listingcontroller import MyredditsController
 
+from wiki import WikiController
+from wiki import WikiApiController as WikiapiController
+
 from feedback import FeedbackController
 from front import FormsController
 from front import FrontController
