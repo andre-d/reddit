@@ -5,18 +5,21 @@ from r2.lib.menus import PageNameNav
 from r2.lib.filters import safemarkdown
 
 class WikiView(Templated):
-    def __init__(self, content, actions):
+    def __init__(self, content, actions, diff=None):
         self.page_content = safemarkdown(content)
+        self.diff = diff
         self.page = c.page
         self.actions = actions
         self.base_url = c.wiki_base_url
         Templated.__init__(self)
 
 class WikiEditPage(Templated):
-    def __init__(self, page_content, previous, conflict = False):
+    def __init__(self, page_content, previous, conflict = None):
         self.page_content = page_content
         self.previous = previous
         self.conflict = conflict
+        self.base_url = c.wiki_base_url
+        self.page = c.page
         Templated.__init__(self)
 
 class WikiPageSettings(Templated):
@@ -47,18 +50,22 @@ class WikiBase(Reddit):
         context['title'] = c.sr
         if context.get('alert', None):
             context['infotext'] = context['alert']
+        elif c.wikidisabled:
+            context['infotext'] = "This wiki is currently disabled, only mods may interact with this wiki"
         context['content'] = WikiBasePage(content, action, context.get('showtitle', True))
         Reddit.__init__(self, **context)
 
 class WikiBasic(WikiBase):
-    def __init__(self, content, actions, **context):
-        content = WikiView(content, actions)
+    def __init__(self, content, actions, diff=None, **context):
+        content = WikiView(content, actions, diff=diff)
         WikiBase.__init__(self, content, **context)
 
 class WikiPageView(WikiBasic):
-    def __init__(self, content, canedit=False, showactions=True, **context):
+    def __init__(self, content, canedit=False, showactions=True, v=None, **context):
         actions = []
-        if showactions:
+        if v:
+            actions += [('current','View current','moderators')]
+        elif showactions:
             if canedit:
                 actions += [('edit','Edit this page', 'contributors')]
             actions += [('revisions', 'View Revisions', 'moderationlog')]
@@ -79,7 +86,7 @@ class WikiEdit(WikiBase):
         content = WikiEditPage(content, previous, conflict)
         context["wikiaction"] = "Editing"
         if conflict:
-            context["alert"] = "There was a conflict, later on this will have usefull info and not destroy your edit :D"
+            context["alert"] = "There was a conflict, someone has edited a similar section after you started editing"
         WikiBase.__init__(self, content, **context)
 
 class WikiSettings(WikiBase):

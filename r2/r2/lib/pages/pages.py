@@ -360,6 +360,11 @@ class Reddit(Templated):
 
             if c.user_is_loggedin or not g.read_only_mode:
                 main_buttons.append(NamedButton('saved', False))
+            mod = False
+            if c.user_is_loggedin:
+                mod = bool(c.site.is_moderator(c.user))
+            if c.site.wikimode != 'disabled' or mod:
+                main_buttons.append(NavButton('wiki', 'wiki'))
 
         more_buttons = []
 

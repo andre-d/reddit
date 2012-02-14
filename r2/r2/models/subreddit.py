@@ -66,6 +66,7 @@ class Subreddit(Thing, Printable):
                      show_cname_sidebar = False,
                      css_on_cname = True,
                      domain = None,
+                     wikimode = "disabled",
                      over_18 = False,
                      mod_actions = 0,
                      sponsorship_text = "this reddit is sponsored by",
@@ -185,29 +186,28 @@ class Subreddit(Thing, Printable):
     @property
     def stylesheet_contents_user(self):
         try:
-            return WikiPage.get(self.name, 'config/stylesheet').content
+            return WikiPage.get(self.name, 'config/stylesheet')._get('content','')
         except tdb_cassandra.NotFound:
            return  self._t.get('stylesheet_contents_user')
     
     @property
     def prev_stylesheet(self):
         try:
-            return WikiPage.get(self.name, 'config/stylesheet').revision
+            return WikiPage.get(self.name, 'config/stylesheet')._get('revision','')
         except tdb_cassandra.NotFound:
             return ''
-        
     
     @property
     def description(self):
         try:
-            return WikiPage.get(self.name, 'config/sidebar').content
+            return WikiPage.get(self.name, 'config/sidebar')._get('content','')
         except tdb_cassandra.NotFound:
             return self._t.get('description')
     
     @property
     def prevdesc(self):
         try:
-            return WikiPage.get(self.name, 'config/sidebar').revision
+            return WikiPage.get(self.name, 'config/sidebar')._get('revision','')
         except tdb_cassandra.NotFound:
             return ''
     

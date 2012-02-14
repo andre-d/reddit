@@ -5352,3 +5352,10 @@ tr.gold-accent + tr > td {
     font-family: 'Courier New', monospace;
     width: 50%;
 }
+
+table.diff {font-size: small;}
+.diff_header {background-color:lightgrey}
+.diff_next {background-color:lightgrey}
+.diff_add {background-color:lightgreen}
+.diff_chg {background-color:yellow}
+.diff_sub {background-color:lightcoral}
