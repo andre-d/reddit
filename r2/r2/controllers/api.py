@@ -57,6 +57,7 @@ from r2.lib.filters import safemarkdown
 from r2.lib.scraper import str_to_image
 
 from r2.models.wiki import WikiPage
+from r2.lib.merge import ConflictException
 
 import csv
 from collections import defaultdict
@@ -1116,26 +1117,26 @@ class ApiController(RedditController):
         if not report.errors:
             jquery.apply_stylesheet(stylesheet_contents_parsed)
         if not report.errors and op == 'save':
-            c.site.stylesheet_contents      = stylesheet_contents_parsed
             
             try:
                 wiki = WikiPage.get(c.site.name, 'config/stylesheet')
             except tdb_cassandra.NotFound:
                 wiki = WikiPage.create(c.site.name, 'config/stylesheet')
-            wiki.revise(stylesheet_contents, previous=prevstyle, author=c.user.name)
-
-            c.site.stylesheet_hash = md5(stylesheet_contents_parsed).hexdigest()
-
-            set_last_modified(c.site,'stylesheet_contents')
-
-            c.site._commit()
-
-            ModAction.create(c.site, c.user, action='editsettings', 
-                             details='stylesheet')
-
-            form.set_html(".status", _('saved'))
-            form.set_html(".errors ul", "")
-
+            
+            try:
+                wiki.revise(stylesheet_contents, previous=prevstyle, author=c.user.name)
+                c.site.stylesheet_contents = stylesheet_contents_parsed
+                c.site.stylesheet_hash = md5(stylesheet_contents_parsed).hexdigest()
+                set_last_modified(c.site,'stylesheet_contents')
+                c.site._commit()
+                ModAction.create(c.site, c.user, action='editsettings', details='stylesheet')
+                form.find('.errors').hide()
+                form.set_html(".status", _('saved'))
+                form.set_html(".errors ul", "")
+            except ConflictException:
+                form.set_html(".status", _('conflict error'))
+                form.set_html(".errors ul", 'There was a conflict while editing the stylesheet')
+                form.find('.errors').show()
         elif op == 'preview':
             # try to find a link to use, otherwise give up and
             # return
@@ -1314,6 +1315,7 @@ class ApiController(RedditController):
                    show_cname_sidebar = VBoolean('show_cname_sidebar'),
                    type = VOneOf('type', ('public', 'private', 'restricted', 'archived')),
                    link_type = VOneOf('link_type', ('any', 'link', 'self')),
+                   wikimode = VOneOf('wikimode', ('disabled', 'modonly', 'anyone')),
                    ip = ValidIP(),
                    sponsor_text =VLength('sponsorship-text', max_length = 500),
                    sponsor_name =VLength('sponsorship-name', max_length = 64),
@@ -1329,7 +1331,7 @@ class ApiController(RedditController):
         kw = dict((k, v) for k, v in kw.iteritems()
                   if k in ('name', 'title', 'domain', 'description', 'prevdesc', 'over_18',
                            'show_media', 'show_cname_sidebar', 'type', 'link_type', 'lang',
-                           "css_on_cname", "header_title", 
+                           "css_on_cname", "header_title", 'wikimode',
                            'allow_top'))
         
         description = kw['description']
@@ -1422,7 +1424,13 @@ class ApiController(RedditController):
             wiki = WikiPage.get(sr.name, 'config/sidebar')
         except tdb_cassandra.NotFound:
             wiki = WikiPage.create(sr.name, 'config/sidebar')
-        wiki.revise(description, previous=prevdesc, author=c.user.name)
+        try:
+            wiki.revise(description, previous=prevdesc, author=c.user.name)
+        except ConflictException:
+            c.errors.add(errors.CONFLICT, field = "description")
+            form.has_errors("description", errors.CONFLICT)
+            form.parent().set_html('.status', _("Description not saved"))
+            return
         
         if redir:
             form.redirect(redir)

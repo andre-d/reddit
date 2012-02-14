@@ -1,4 +1,9 @@
 <div class="wikipage searchable">
+    %if thing.diff:
+        <p>
+            ${unsafe(thing.diff)}
+        </p>
+    %endif
     <p>
         ${unsafe(thing.page_content)}
     </p>

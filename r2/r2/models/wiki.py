@@ -2,6 +2,7 @@ from r2.lib.db import tdb_cassandra
 from r2.lib.merge import threeWayMerge
 from pycassa.system_manager import TIME_UUID_TYPE
 from pylons import c, g
+from pylons.controllers.util import abort
 
 class WikiPageExists(Exception):
     pass
@@ -60,6 +61,9 @@ class WikiPage(tdb_cassandra.Thing):
         return page
        
     def may_revise(self):
+        # This should be moved into the controller
+        if c.wiki_sr.wikimode == 'modonly' and not c.is_mod:
+                return False
         level = int(self.permlevel)
         if not c.user_is_loggedin:
             return False
@@ -70,6 +74,7 @@ class WikiPage(tdb_cassandra.Thing):
         return False
     
     def may_view(self):
+        # This should be moved into the controller
         level = int(self.permlevel)
         if level < 2:
             return True
@@ -104,8 +109,10 @@ class WikiPage(tdb_cassandra.Thing):
         self._commit()
         
     
-    def get_revisions(self, after=None, count=11):
-        return WikiRevisionsByPage.query([self._id], after=after, count=count)
+    def get_revisions(self, after=None, count=10):
+        raw = WikiRevisionsByPage.query([self._id], after=after, count=count)
+        revisions = [r for r in raw]
+        return revisions
     
     def _commit(self, *a, **kw):
         if not self._id: # Creating a new page

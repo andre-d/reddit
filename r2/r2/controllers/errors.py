@@ -91,6 +91,7 @@ error_list = dict((
         ('OAUTH2_INVALID_CLIENT', _('invalid client id')),
         ('OAUTH2_ACCESS_DENIED', _('access denied by the user')),
         ('CONFIRM', _("please confirm the form")),
+        ('CONFLICT', _("conflict error while saving description")),
         ('NO_API', _('cannot perform this action via the API')),
     ))
 errors = Storage([(e, e) for e in error_list.keys()])

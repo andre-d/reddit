@@ -1,7 +1,11 @@
 <div class="icon-menu">
     %if len(thing.revisions):
         %for r in thing.revisions:
-            <h2><a class="reddit-moderationlog" href="${thing.base_url}/${thing.page}?v=${r._id}">Edit by ${r._get('author', 'Unknown')}</a></h2>
+            <h2><a class="reddit-moderationlog" href="${thing.base_url}/${thing.page}?v=${r._id}">Edit by ${r._get('author', 'Unknown')}
+            %if r._get('_current'):
+                (current)
+            %endif
+            </a></h2>
         %endfor
         %if thing.last:
             <h2><a href="${thing.base_url}/revisions/${thing.page}?l=${thing.last}">Next Page</a></h2>

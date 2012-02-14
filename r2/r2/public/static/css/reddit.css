@@ -5118,3 +5118,10 @@ tr.gold-accent + tr > td {
 .modactions.marknsfw {
     background-image: url(../modactions_marknsfw.png); /* SPRITE */
 }
+
+table.diff {font-size: small;}
+.diff_header {background-color:lightgrey}
+.diff_next {background-color:lightgrey}
+.diff_add {background-color:lightgreen}
+.diff_chg {background-color:yellow}
+.diff_sub {background-color:lightcoral}

@@ -9,6 +9,7 @@ from r2.lib.pages import BoringPage
 from r2.lib.pages.wiki import *
 from pylons.controllers.util import abort
 from r2.lib.filters import safemarkdown
+import difflib
 
 restricted_pages = {"config/stylesheet":"This page is the subreddit css, this is not a normal wiki page, be carefull editing..currently this should be edited in the normal stylesheet location..and will not apply from here",
                     "config/sidebar":"The contents of this page appear on the subreddit sidebar"}
@@ -16,6 +17,8 @@ restricted_pages = {"config/stylesheet":"This page is the subreddit css, this is
 restricted_namespaces = ('reddit/', 'config/', 'special/')
 
 class WikiController(RedditController):
+    # These all need validators
+    
     def GET_wikiPage(self, page="index"):
         version = request.GET.get('v')
         c.page = page
@@ -29,7 +32,6 @@ class WikiController(RedditController):
                 abort(403)
             else:
                 return WikiNotFound().render()
-                
         if not version:
             content = wp.content
         else:
@@ -40,7 +42,14 @@ class WikiController(RedditController):
                 abort(404)
         showactions = c.is_mod or (page not in restricted_pages)
         c.allow_styles = True
-        return WikiPageView(content, canedit=wp.may_revise(), showactions=showactions, alert=message).render()
+        diffcontent = None
+        if version:
+            diffcontent = difflib.HtmlDiff()
+            diffcontent = diffcontent.make_table(content.splitlines(),
+                                                wp.content.splitlines(),
+                                                fromdesc=version,
+                                                todesc="Current revision")
+        return WikiPageView(content, canedit=wp.may_revise(), showactions=showactions, alert=message, v=version, diff=diffcontent).render()
    
     def POST_wikiPage(self, page="index"):
         return self.GET_wikiPage(page)
@@ -58,12 +67,14 @@ class WikiController(RedditController):
                 abort(403)
         except tdb_cassandra.NotFound:
                 abort(404)
-        revisions = [r for r in wp.get_revisions(after=after)]
+        revisions = wp.get_revisions(after=after, count = 11)
+        if not after:
+            revisions[0]._current = True
         last=None
         if len(revisions) > 10:
             revisions = revisions[:-1]
             try:
-                last=revisions[-2]._id
+                last=revisions[-1]._id
             except IndexError:
                 pass
         return WikiRevisions(revisions, last).render()
@@ -72,6 +83,8 @@ class WikiController(RedditController):
         return self.GET_wikiRevisions(page)
     
     def GET_wikiCreate(self, page="index"):
+        if not wp.may_revise():
+            abort(403)
         if page.startswith(restricted_namespaces):
             abort(403)
         try:
@@ -102,7 +115,16 @@ class WikiController(RedditController):
             previous = wp.revision
         except AttributeError:
             previous = None
-        return WikiEdit(wp.content, previous, self.editconflict, alert=message).render()
+        diffcontent = None
+        revise = None
+        if self.editconflict:
+            diffcontent = difflib.HtmlDiff()
+            diffcontent = diffcontent.make_table(wp.content.splitlines(),
+                                                self.editconflict.splitlines(),
+                                                fromdesc="Current edit",
+                                                todesc="Your edit")
+            revise = (self.editconflict, diffcontent)
+        return WikiEdit(wp.content, previous, revise, alert=message).render()
     
     def POST_wikiRevise(self, page="index"):
         if not c.is_mod and page in restricted_pages:
@@ -119,7 +141,7 @@ class WikiController(RedditController):
                 description = "Page %s edited" % page
                 ModAction.create(c.wiki_sr, c.user, 'wikirevise', description=description)
         except ConflictException:
-            self.editconflict = True
+            self.editconflict = request.POST["content"]
             return self.GET_wikiRevise(page)
         return self.redirect("%s/%s" % (c.wiki_base_url, page))
     
@@ -155,10 +177,17 @@ class WikiController(RedditController):
         RedditController.pre(self)
         frontpage = c.site.name == " reddit.com"
         c.wiki_sr = Subreddit._by_name(g.default_sr) if frontpage else c.site
-        c.wiki_base_url = '/wiki' if frontpage else '/r/'+c.site.name+'/wiki'
         c.sr = c.wiki_sr.name
+        c.wiki_base_url = '/wiki' if frontpage else '/r/'+c.sr+'/wiki'
         c.is_mod = False
         self.editconflict = False
         if c.user_is_loggedin:
             c.is_mod = bool(c.wiki_sr.is_moderator(c.user))
+        c.wikidisabled = False
+        if c.wiki_sr.wikimode == 'disabled':
+            if not c.is_mod:
+                abort(403)
+            else:
+                c.wikidisabled = True
+                
         
