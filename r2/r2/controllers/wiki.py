@@ -9,182 +9,130 @@ from r2.lib.pages import BoringPage
 from r2.lib.pages.wiki import *
 from pylons.controllers.util import abort
 from r2.lib.filters import safemarkdown
+from validator.wiki import *
 import difflib
+from pylons.i18n import _
 
-restricted_pages = {"config/stylesheet":"This page is the subreddit css, this is not a normal wiki page, be carefull editing..currently this should be edited in the normal stylesheet location..and will not apply from here",
-                    "config/sidebar":"The contents of this page appear on the subreddit sidebar"}
-
-restricted_namespaces = ('reddit/', 'config/', 'special/')
+page_descriptions = {'config/stylesheet':_("This page is the subreddit css, please edit from the subreddit stylesheet interface"),
+                     'config/sidebar':_("The contents of this page appear on the subreddit sidebar")}
 
 class WikiController(RedditController):
-    # These all need validators
+    def make_htmldiff(self, a, b, adesc, bdesc):
+        diffcontent = difflib.HtmlDiff()
+        return diffcontent.make_table(a.splitlines(),
+                                      b.splitlines(),
+                                      fromdesc=adesc,
+                                      todesc=bdesc)
     
-    def GET_wikiPage(self, page="index"):
-        version = request.GET.get('v')
-        c.page = page
+    @validate(pv = VWikiPageAndVersion(('page', 'v'), restricted=False))
+    def GET_wikiPage(self, pv):
+        page, version = pv
         message = None
-        try:
-            wp = WikiPage.get(c.sr, page)
-            if not wp.may_view():
-                abort(403)
-        except tdb_cassandra.NotFound:
-            if page.startswith(restricted_namespaces):
-                abort(403)
-            else:
-                return WikiNotFound().render()
+        if not page:
+            return self.GET_wikiCreate(page=c.page, view=True)
         if not version:
-            content = wp.content
+            content = page.content
+            if c.is_mod and page.name in page_descriptions:
+                message = page_descriptions[page.name]
         else:
-            try:
-                content = WikiRevision.get(version, wp._id).content
-                message = "Viewing revision %s" % version
-            except:
-                abort(404)
-        showactions = c.is_mod or (page not in restricted_pages)
+            content = version.content
+            message = _("Viewing revision %s") % version._id
+        showactions = c.is_mod or (page.name not in special_pages)
+        show_settings = False if page.name in special_pages else c.is_mod
         c.allow_styles = True
         diffcontent = None
         if version:
-            diffcontent = difflib.HtmlDiff()
-            diffcontent = diffcontent.make_table(content.splitlines(),
-                                                wp.content.splitlines(),
-                                                fromdesc=version,
-                                                todesc="Current revision")
-        return WikiPageView(content, canedit=wp.may_revise(), showactions=showactions, alert=message, v=version, diff=diffcontent).render()
-   
-    def POST_wikiPage(self, page="index"):
-        return self.GET_wikiPage(page)
+            diffcontent = self.make_htmldiff(content, page.content, version._id, _("Current revision"))
+        return WikiPageView(content, canedit=may_revise(page), showactions=showactions, show_settings=show_settings, alert=message, v=version, diff=diffcontent).render()
     
-    def GET_wikiRevisions(self, page="index"):
-        after = request.GET.get('l')
-        if not c.is_mod and page in restricted_pages:
-            abort(403)
-        c.page = page
-        try:
-            if after:
-                after=WikiRevision.get(after)
-            wp = WikiPage.get(c.sr, page)
-            if not wp.may_view():
-                abort(403)
-        except tdb_cassandra.NotFound:
-                abort(404)
-        revisions = wp.get_revisions(after=after, count = 11)
-        if not after:
+    @validate(pv = VWikiPageAndVersion(('page', 'l'), restricted=False))
+    def GET_wikiRevisions(self, pv, page):
+        page, after = pv
+        revisions = page.get_revisions(after=after, count=11)
+        if not after and revisions:
             revisions[0]._current = True
         last=None
+        # We get an extra revision to determine if there will be any on the next page
         if len(revisions) > 10:
             revisions = revisions[:-1]
             try:
                 last=revisions[-1]._id
             except IndexError:
-                pass
+                pass # Should not happen
         return WikiRevisions(revisions, last).render()
-   
-    def POST_wikiRevisions(self, page="index"):
-        return self.GET_wikiRevisions(page)
     
-    def GET_wikiCreate(self, page="index"):
-        if not wp.may_revise():
-            abort(403)
-        if page.startswith(restricted_namespaces):
-            abort(403)
-        try:
-            wp = WikiPage.get(c.sr, page)
-        except tdb_cassandra.NotFound:
-            WikiPage.create(c.sr, page)
-            return self.redirect("%s/edit/%s" % (c.wiki_base_url, page))
-        return self.GET_wikiPage(page)
+    @validate(may_create = VWikiPageCreate('page'))
+    def GET_wikiCreate(self, may_create, page, view=False):
+        if c.error:
+            return BoringPage(_("Wiki error"), infotext=c.error).render()
+        if view:
+            return WikiNotFound().render()
+        if may_create:
+            WikiPage.create(c.wiki_sr.name, page)
+            return self.redirect('%s/edit/%s' % (c.wiki_base_url, page))
+        return self.GET_wikiPage(page=page)
     
-    def POST_wikiCreate(self, page="index"):
-        return self.GET_wikiCreate(page)
-    
-    def GET_wikiRevise(self, page="index"):
+    @validate(page = VWikiPageRevise('page', restricted=True))
+    def GET_wikiRevise(self, page):
         message = None
-        if page in restricted_pages:
-            if not c.is_mod:
-                abort(403)
-            else:
-                message = restricted_pages[page]
-        c.page = page
         try:
-            wp = WikiPage.get(c.sr, page)
-        except tdb_cassandra.NotFound:
-            abort(404)
-        if not wp.may_revise():
-            abort(403)
-        try:
-            previous = wp.revision
+            previous = page.revision
         except AttributeError:
             previous = None
         diffcontent = None
         revise = None
+        if page.name in page_descriptions:
+            message = page_descriptions[page.name]
         if self.editconflict:
-            diffcontent = difflib.HtmlDiff()
-            diffcontent = diffcontent.make_table(wp.content.splitlines(),
-                                                self.editconflict.splitlines(),
-                                                fromdesc="Current edit",
-                                                todesc="Your edit")
+            diffcontent = self.make_htmldiff(page.content, self.editconflict, _("Current edit"), _("Your edit"))
             revise = (self.editconflict, diffcontent)
-        return WikiEdit(wp.content, previous, revise, alert=message).render()
+        return WikiEdit(page.content, previous, revise, alert=message).render()
+   
+    def GET_wikiRecent(self):
+        revisions = WikiRevision.get_recent(c.wiki_sr.name)
+        return WikiRecent(revisions).render()
     
-    def POST_wikiRevise(self, page="index"):
-        if not c.is_mod and page in restricted_pages:
-            abort(403)
+    @validate(page = VWikiPageRevise('page', restricted=True))
+    def POST_wikiRevise(self, page):
         try:
-            wp = WikiPage.get(c.sr, page)
-        except tdb_cassandra.NotFound:
-            abort(404)
-        if not wp.may_revise():
-            abort(403)
-        try:
-            wp.revise(request.POST["content"], request.POST["previous"], c.user.name)
+            page.revise(request.POST['content'], request.POST['previous'], c.user.name)
             if c.is_mod:
-                description = "Page %s edited" % page
+                description = _("Page %s edited") % page
                 ModAction.create(c.wiki_sr, c.user, 'wikirevise', description=description)
         except ConflictException:
-            self.editconflict = request.POST["content"]
-            return self.GET_wikiRevise(page)
-        return self.redirect("%s/%s" % (c.wiki_base_url, page))
+            self.editconflict = request.POST['content']
+            return self.GET_wikiRevise(page=page.name)
+        return self.redirect('%s/%s' % (c.wiki_base_url, page.name))
     
-    def GET_wikiSettings(self, page="index"):
-        c.page = page
-        try:
-            wp = WikiPage.get(c.sr, page)
-        except tdb_cassandra.NotFound:
-            abort(404)
-        if not c.is_mod:
-            abort(403)
-        settings = {'permlevel': int(wp.permlevel)}
+    @validate(page = VWikiPage('page', restricted=True, modonly=True))
+    def GET_wikiSettings(self, page):
+        settings = {'permlevel': int(page._get('permlevel', 0))}
         return WikiSettings(settings).render()
     
-    def POST_wikiSettings(self, page="index"):
+    @validate(page = VWikiPage('page', restricted=True, modonly=True))
+    def POST_wikiSettings(self, page):
+        oldpermlevel = page.permlevel
+        permlevel = request.POST['permlevel']
         try:
-            wp = WikiPage.get(c.sr, page)
-        except tdb_cassandra.NotFound:
-            abort(404)
-        if not c.is_mod:
+            page.change_permlevel(permlevel)
+        except ValueError:
             abort(403)
-        oldpermlevel = wp.permlevel
-        permlevel = request.POST["permlevel"]
-        try:
-            wp.change_permlevel(permlevel)
-        except:
-            abort(403)
-        description = "Page: %s, Changed from %s to %s" % (page, oldpermlevel, permlevel)
+        description = _("Page: %s, Changed from %s to %s") % (page.name, oldpermlevel, permlevel)
         ModAction.create(c.wiki_sr, c.user, 'wikipermlevel', description=description)
-        return self.GET_wikiSettings(page)
+        return self.GET_wikiSettings(page=page.name)
     
     def pre(self):
         RedditController.pre(self)
-        frontpage = c.site.name == " reddit.com"
-        c.wiki_sr = Subreddit._by_name(g.default_sr) if frontpage else c.site
-        c.sr = c.wiki_sr.name
-        c.wiki_base_url = '/wiki' if frontpage else '/r/'+c.sr+'/wiki'
+        c.frontpage = c.site.name == ' reddit.com'
+        c.wiki_sr = Subreddit._by_name(g.default_sr) if c.frontpage else c.site
+        c.wiki_base_url = '/wiki' if c.frontpage else '/r/'+c.wiki_sr.name+'/wiki'
         c.is_mod = False
         self.editconflict = False
         if c.user_is_loggedin:
-            c.is_mod = bool(c.wiki_sr.is_moderator(c.user))
+            c.is_mod = c.wiki_sr.is_moderator(c.user)
         c.wikidisabled = False
-        if c.wiki_sr.wikimode == 'disabled':
+        mode = c.wiki_sr.wikimode
+        if not mode or mode == 'disabled':
             if not c.is_mod:
                 abort(403)
             else:

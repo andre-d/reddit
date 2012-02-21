@@ -3,13 +3,12 @@ from pylons import c
 from r2.lib.wrapped import Templated
 from r2.lib.menus import PageNameNav
 from r2.lib.filters import safemarkdown
+from pylons.i18n import _
 
 class WikiView(Templated):
-    def __init__(self, content, actions, diff=None):
+    def __init__(self, content, diff=None):
         self.page_content = safemarkdown(content)
         self.diff = diff
-        self.page = c.page
-        self.actions = actions
         self.base_url = c.wiki_base_url
         Templated.__init__(self)
 
@@ -19,84 +18,92 @@ class WikiEditPage(Templated):
         self.previous = previous
         self.conflict = conflict
         self.base_url = c.wiki_base_url
-        self.page = c.page
         Templated.__init__(self)
 
 class WikiPageSettings(Templated):
     def __init__(self, settings):
         self.permlevel = settings['permlevel']
+        self.base_url = c.wiki_base_url
         Templated.__init__(self)
 
 class WikiPageRevisions(Templated):
     def __init__(self, revisions, last):
-        self.page = c.page
         self.revisions = revisions
         self.last = last
         self.base_url = c.wiki_base_url
         Templated.__init__(self)
 
 class WikiBasePage(Templated):
-    def __init__(self, content, action, showtitle=False):
+    def __init__(self, content, action, actions=[], showtitle=False):
+        self.actions = actions[:]
+        self.actions += [('revisions', _("Recent Edits"), 'moderationlog', False)]
+        self.base_url = c.wiki_base_url
         if showtitle:
-            self.title = "%s wiki (%s) - %s" % (action, c.sr, c.page)
+            self.title = _("%s wiki (%s)") % (action, c.wiki_sr.name)
+            if c.page:
+                self.title +=  ' - %s' % c.page
         else:
-            self.title = ""
+            self.title = ''
         self.content = content
         Templated.__init__(self)
 
 class WikiBase(Reddit):
-    def __init__(self, content, **context):
-        action = context.get('wikiaction', 'Viewing')
-        context['title'] = c.sr
+    def __init__(self, content, actions=[], **context):
+        action = context.get('wikiaction', _("Viewing"))
+        context['title'] = c.wiki_sr.name
         if context.get('alert', None):
             context['infotext'] = context['alert']
         elif c.wikidisabled:
-            context['infotext'] = "This wiki is currently disabled, only mods may interact with this wiki"
-        context['content'] = WikiBasePage(content, action, context.get('showtitle', True))
+            context['infotext'] = _("This wiki is currently disabled, only mods may interact with this wiki")
+        context['content'] = WikiBasePage(content, action, actions, context.get('showtitle', True))
         Reddit.__init__(self, **context)
 
-class WikiBasic(WikiBase):
-    def __init__(self, content, actions, diff=None, **context):
-        content = WikiView(content, actions, diff=diff)
-        WikiBase.__init__(self, content, **context)
-
-class WikiPageView(WikiBasic):
-    def __init__(self, content, canedit=False, showactions=True, v=None, **context):
+class WikiPageView(WikiBase):
+    def __init__(self, content, diff=None, canedit=False, **context):
         actions = []
-        if v:
-            actions += [('current','View current','moderators')]
-        elif showactions:
+        if not content and not context['alert']:
             if canedit:
-                actions += [('edit','Edit this page', 'contributors')]
-            actions += [('revisions', 'View Revisions', 'moderationlog')]
-            if c.is_mod:
-                actions += [('settings', 'Page settings', 'edit')]
-        if not content:
-            context["alert"] = "This page is empty, edit it to add some content."
-        WikiBasic.__init__(self, content, actions, **context)
+                context['alert'] = _("This page is empty, edit it to add some content.")
+        if context.get('v'):
+            actions += [(c.page, _("View Current"), 'moderators', False)]
+        elif context.get('showactions'):
+            if canedit:
+                actions += [('edit', _("Edit This Page"), 'contributors', True)]
+            actions += [('revisions', _("View Revisions"), 'moderationlog', True)]
+            if context.get('show_settings'):
+                actions += [('settings', _("Page Settings"), 'edit', True)]
+        content = WikiView(content, diff=diff)
+        WikiBase.__init__(self, content, actions=actions, **context)
 
-class WikiNotFound(WikiBasic):
+class WikiNotFound(WikiBase):
     def __init__(self, **context):
-        actions = [('create','Page does not exist - Create', 'contributors')]
-        context["alert"] = "Page %s does not exist in this subreddit" % c.page
-        WikiBasic.__init__(self, '', actions, showtitle=False, **context)
+        actions = [('create',_("Page does not exist - Create"), 'contributors', True)]
+        context['alert'] = _("Page %s does not exist in this subreddit") % c.page
+        WikiBase.__init__(self, '', actions=actions, showtitle=False, **context)
 
 class WikiEdit(WikiBase):
     def __init__(self, content, previous, conflict, **context):
         content = WikiEditPage(content, previous, conflict)
-        context["wikiaction"] = "Editing"
+        context['wikiaction'] = 'Editing'
         if conflict:
-            context["alert"] = "There was a conflict, someone has edited a similar section after you started editing"
+            context['alert'] = _("There was a conflict, someone has edited a similar section after you started editing")
         WikiBase.__init__(self, content, **context)
 
 class WikiSettings(WikiBase):
     def __init__(self, settings, **context):
         content = WikiPageSettings(settings)
-        context["wikiaction"] = "Settings for"
+        context['wikiaction'] = _("Settings for")
         WikiBase.__init__(self, content, **context)
 
 class WikiRevisions(WikiBase):
     def __init__(self, revisions, last, **context):
         content = WikiPageRevisions(revisions, last)
-        context["wikiaction"] = "Revisions for"
+        context['wikiaction'] = _("Revisions for")
         WikiBase.__init__(self, content, **context)
+
+class WikiRecent(WikiBase):
+    def __init__(self, revisions, **context):
+        content = WikiPageRevisions(revisions, last=None)
+        context['wikiaction'] = _("Revisions for")
+        WikiBase.__init__(self, content, **context)
+

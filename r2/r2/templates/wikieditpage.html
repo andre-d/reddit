@@ -3,16 +3,16 @@
 %>
 
 %if thing.conflict:
-    <h1>Your edit</h1>
-    <em>This edit is for you to resolve the conflict, any text in the box below will not save.</em><br/>
+    <h1>${_("Your edit")}</h1>
+    <em>${_("This edit is for you to resolve the conflict, any text in the box below will not save.")}</em><br/>
     <textarea>${keep_space(thing.conflict[0])}</textarea>
     ${unsafe(thing.conflict[1])}
-    <h1>Current edit</h1>
+    <h1>${_("Current edit")}</h1>
 %endif
 
 <form method="post">
     <textarea name="content">${keep_space(thing.page_content)}</textarea>
     <input type="hidden" name="previous" value="${thing.previous}" /><br/>
-    <input type="submit" value="Save Page" />
-    <input type="button" value="Cancel Edit"  onclick="location.href='${thing.base_url}/${thing.page}'" /></a>
+    <input type="submit" value="${_('Save Page')}" />
+    <input type="button" value="${_('Cancel Edit')}"  onclick="location.href='${thing.base_url}/${c.page}'" />
 </form>
