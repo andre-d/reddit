@@ -854,6 +854,10 @@ a.author { margin-right: 0.5em; }
     margin: 15px;
 }
 
+.wiki .icon-menu h2 {
+    margin: 5px 0;
+}
+
 /* organic listing */
 .organic-listing {
     border: solid 1px gray;

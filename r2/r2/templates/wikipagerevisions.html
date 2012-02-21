@@ -1,17 +1,18 @@
+<%namespace file="utils.html" import="timestamp"/>
 <div class="icon-menu">
     %if len(thing.revisions):
         %for r in thing.revisions:
-            <h2><a class="reddit-moderationlog" href="${thing.base_url}/${thing.page}?v=${r._id}">Edit by ${r._get('author', 'Unknown')}
+            <h2><a class="reddit-moderationlog" href="${thing.base_url}/${r.page}?v=${r._id}">${_("Edit by ")}${r._get('author', 'Unknown')} in page ${r.page} (${timestamp(r.date)}&nbsp;ago)
             %if r._get('_current'):
-                (current)
+                (${_("current")})
             %endif
             </a></h2>
         %endfor
         %if thing.last:
-            <h2><a href="${thing.base_url}/revisions/${thing.page}?l=${thing.last}">Next Page</a></h2>
+            <h2><a href="${thing.base_url}/revisions/${c.page}?l=${thing.last}">${_("Next Page")}</a></h2>
         %endif
     %else:
-        <h2>There does not seem to be anything here.</h2>
+        <h2>${_("There does not seem to be anything here.")}</h2>
     %endif
 
 </div>

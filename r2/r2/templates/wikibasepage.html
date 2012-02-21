@@ -2,5 +2,17 @@
     <h1>${thing.title}</h1>
     <div id="content" class="wiki">
         ${thing.content}
+        <hr/>
+        <div class="icon-menu">
+            %for action in thing.actions:
+                <h2><a class="reddit-${action[2]}"
+                %if action[3]:
+                    href="${thing.base_url}/${action[0]}/${c.page}"
+                %else:
+                    href="${thing.base_url}/${action[0]}"
+                %endif
+                >${action[1]}</a></h2>
+            %endfor
+        </div>
     </div>
 </div>

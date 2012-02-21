@@ -8,9 +8,3 @@
         ${unsafe(thing.page_content)}
     </p>
 </div>
-<hr/>
-<div class="icon-menu">
-    %for action in thing.actions:
-        <h2><a class="reddit-${action[2]}" href="${thing.base_url}/${action[0]}/${thing.page}">${action[1]}</a></h2>
-    %endfor
-</div>
