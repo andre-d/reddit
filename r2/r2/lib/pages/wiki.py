@@ -107,3 +107,9 @@ class WikiRecent(WikiBase):
         context['wikiaction'] = _("Revisions for")
         WikiBase.__init__(self, content, **context)
 
+class WikiDiscussions(WikiBase):
+    def __init__(self, listing, **context):
+        context['wikiaction'] = _("Discussions for")
+        actions = [(c.page, _("View Page"), 'moderators', False)]
+        WikiBase.__init__(self, listing, actions=actions, **context)
+
