@@ -149,9 +149,9 @@ class Account(Thing):
     def can_wiki(self):
         if self.wiki_override is not None:
             return self.wiki_override
-        else:
-            return (self.link_karma >= g.WIKI_KARMA and
-                    self.comment_karma >= g.WIKI_KARMA)
+       # else:
+        #    return (self.link_karma >= g.WIKI_KARMA and
+         #           self.comment_karma >= g.WIKI_KARMA)
 
     def jury_betatester(self):
         if g.cache.get("jury-killswitch"):

@@ -26,6 +26,8 @@ def may_revise(page):
     level = int(page.permlevel)
     if not c.user_is_loggedin:
         return False
+    if c.user.can_wiki() == False:
+        return False
     if level == 0:
         return True
     if level >= 1:
