@@ -1,12 +1,16 @@
 from pylons import request, g, c
 from reddit_base import RedditController
 from r2.lib.merge import ConflictException
+from r2.lib.utils import url_links
 from r2.models.wiki import WikiPage, WikiRevision
 from r2.models.subreddit import Subreddit
 from r2.models.modaction import ModAction
+from r2.lib.template_helpers import add_sr
 from r2.lib.db import tdb_cassandra
 from r2.lib.pages import BoringPage
 from r2.lib.pages.wiki import *
+from reddit_base import base_listing
+from r2.models import IDBuilder, LinkListing
 from pylons.controllers.util import abort
 from r2.lib.filters import safemarkdown
 from validator.wiki import *
@@ -91,6 +95,19 @@ class WikiController(RedditController):
     def GET_wikiRecent(self):
         revisions = WikiRevision.get_recent(c.wiki_sr.name)
         return WikiRecent(revisions).render()
+    
+    @base_listing
+    @validate(page = VWikiPage('page', restricted=True))
+    def GET_wikiDiscussions(self, page, num, after, reverse, count):
+        page_url = add_sr("%s/%s" % (c.wiki_base_url, page.name))
+        links = url_links(page_url)
+        builder = IDBuilder([ link._fullname for link in links ],
+                            num = num, after = after, reverse = reverse,
+                            count = count, skip = False)
+        listing = LinkListing(builder).listing()
+
+        res = WikiDiscussions(listing).render()
+        return res
     
     @validate(page = VWikiPageRevise('page', restricted=True))
     def POST_wikiRevise(self, page):
