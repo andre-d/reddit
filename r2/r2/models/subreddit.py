@@ -67,6 +67,7 @@ class Subreddit(Thing, Printable):
                      css_on_cname = True,
                      domain = None,
                      wikimode = "disabled",
+                     wiki_edit_karma = 10,
                      over_18 = False,
                      mod_actions = 0,
                      sponsorship_text = "this reddit is sponsored by",
