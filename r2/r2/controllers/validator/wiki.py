@@ -48,6 +48,7 @@ class VWikiPage(Validator):
         self.modonly = modonly
         Validator.__init__(self, param, **kw)
     def run(self, page):
+        page = page.lower()
         if not page:
             page="index"
         c.page = page
