@@ -1,8 +1,23 @@
 import subprocess
 import tempfile
+import difflib
+from pylons.i18n import _
 
 class ConflictException(Exception):
-    pass
+    def __init__(self, new, r, original):
+        self.r = r
+        self.new = new
+        self.original = original
+        self.htmldiff = make_htmldiff(new, r, _("Current edit"), _("Your edit"))
+        Exception.__init__(self)
+
+
+def make_htmldiff(a, b, adesc, bdesc):
+    diffcontent = difflib.HtmlDiff()
+    return diffcontent.make_table(a.splitlines(),
+                                  b.splitlines(),
+                                  fromdesc=adesc,
+                                  todesc=bdesc)
 
 def threeWayMerge(original, a, b):
     try:
@@ -18,7 +33,7 @@ def threeWayMerge(original, a, b):
         try:
             final = subprocess.check_output(["diff3", "-a", "--merge"] + names)
         except subprocess.CalledProcessError:
-            raise ConflictException()
+            raise ConflictException(b, a, original)
     finally:
         for f in files:
             f.close()

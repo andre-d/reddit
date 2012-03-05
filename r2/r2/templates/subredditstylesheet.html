@@ -52,6 +52,11 @@
            >
           ${keep_space(thing.stylesheet_contents) or ''}
         </textarea>
+        <div id="conflict_box" style="display: none">
+            <div id="conflict_diff"></div>
+            <h2>${_('Your edit will not be saved! (THIS SHOULD BE RED!)')}</h2>
+            <textarea rows="20" cols="20" name="conflict_old"></textarea>
+        </div>
       </div>
     </div>
     <div style="display:none" class="col">
