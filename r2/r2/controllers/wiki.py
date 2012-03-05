@@ -1,12 +1,12 @@
 from pylons import request, g, c
 from reddit_base import RedditController
-from r2.lib.merge import ConflictException
 from r2.lib.utils import url_links
 from r2.models.wiki import WikiPage, WikiRevision
 from r2.models.subreddit import Subreddit
 from r2.models.modaction import ModAction
 from r2.lib.template_helpers import add_sr
 from r2.lib.db import tdb_cassandra
+from r2.lib.merge import *
 from r2.lib.pages import BoringPage
 from r2.lib.pages.wiki import *
 from reddit_base import base_listing
@@ -14,20 +14,12 @@ from r2.models import IDBuilder, LinkListing
 from pylons.controllers.util import abort
 from r2.lib.filters import safemarkdown
 from validator.wiki import *
-import difflib
 from pylons.i18n import _
 
 page_descriptions = {'config/stylesheet':_("This page is the subreddit css, please edit from the subreddit stylesheet interface"),
                      'config/sidebar':_("The contents of this page appear on the subreddit sidebar")}
 
 class WikiController(RedditController):
-    def make_htmldiff(self, a, b, adesc, bdesc):
-        diffcontent = difflib.HtmlDiff()
-        return diffcontent.make_table(a.splitlines(),
-                                      b.splitlines(),
-                                      fromdesc=adesc,
-                                      todesc=bdesc)
-    
     @validate(pv = VWikiPageAndVersion(('page', 'v'), restricted=False))
     def GET_wikiPage(self, pv):
         page, version = pv
@@ -46,7 +38,7 @@ class WikiController(RedditController):
         c.allow_styles = True
         diffcontent = None
         if version:
-            diffcontent = self.make_htmldiff(content, page.content, version._id, _("Current revision"))
+            diffcontent = make_htmldiff(content, page.content, version._id, _("Current revision"))
         return WikiPageView(content, canedit=may_revise(page), showactions=showactions, show_settings=show_settings, alert=message, v=version, diff=diffcontent).render()
     
     @validate(pv = VWikiPageAndVersion(('page', 'l'), restricted=False))
@@ -88,8 +80,8 @@ class WikiController(RedditController):
         if page.name in page_descriptions:
             message = page_descriptions[page.name]
         if self.editconflict:
-            diffcontent = self.make_htmldiff(page.content, self.editconflict, _("Current edit"), _("Your edit"))
-            revise = (self.editconflict, diffcontent)
+            diffcontent = self.editconflict.htmldiff
+            revise = (self.editconflict.r, diffcontent)
         return WikiEdit(page.content, previous, revise, alert=message).render()
    
     def GET_wikiRecent(self):
@@ -116,8 +108,8 @@ class WikiController(RedditController):
             if c.is_mod:
                 description = _("Page %s edited") % page
                 ModAction.create(c.wiki_sr, c.user, 'wikirevise', description=description)
-        except ConflictException:
-            self.editconflict = request.POST['content']
+        except ConflictException as e:
+            self.editconflict = e
             return self.GET_wikiRevise(page=page.name)
         return self.redirect('%s/%s' % (c.wiki_base_url, page.name))
     

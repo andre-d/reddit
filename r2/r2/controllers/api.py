@@ -1180,6 +1180,7 @@ class ApiController(RedditController):
             return
         else:
             form.find('.errors').hide()
+            form.find('#conflict_box').hide()
             form.set_html(".errors ul", '')
 
         stylesheet_contents_parsed = parsed.cssText if parsed else ''
@@ -1200,12 +1201,16 @@ class ApiController(RedditController):
                 set_last_modified(c.site,'stylesheet_contents')
                 c.site._commit()
                 ModAction.create(c.site, c.user, action='editsettings', details='stylesheet')
+                form.find('.conflict_box').hide()
                 form.find('.errors').hide()
                 form.set_html(".status", _('saved'))
                 form.set_html(".errors ul", "")
-            except ConflictException:
+            except ConflictException as e:
                 form.set_html(".status", _('conflict error'))
                 form.set_html(".errors ul", 'There was a conflict while editing the stylesheet')
+                form.find('#conflict_box').show()
+                form.set_inputs(conflict_old = e.r, stylesheet_contents = e.new)
+                form.set_html('#conflict_diff', e.htmldiff)
                 form.find('.errors').show()
         elif op == 'preview':
             # try to find a link to use, otherwise give up and
@@ -1500,10 +1505,13 @@ class ApiController(RedditController):
             wiki = WikiPage.create(sr.name, 'config/sidebar')
         try:
             wiki.revise(description, previous=prevdesc, author=c.user.name)
-        except ConflictException:
+        except ConflictException as e:
             c.errors.add(errors.CONFLICT, field = "description")
             form.has_errors("description", errors.CONFLICT)
             form.parent().set_html('.status', _("Description not saved"))
+            form.find('#conflict_box').show()
+            form.set_inputs(conflict_old = e.r, description = e.new)
+            form.set_html('#conflict_diff', e.htmldiff)
             return
         
         if redir:

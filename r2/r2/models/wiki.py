@@ -1,5 +1,5 @@
 from r2.lib.db import tdb_cassandra
-from r2.lib.merge import threeWayMerge
+from r2.lib.merge import *
 from pycassa.system_manager import TIME_UUID_TYPE
 from pylons import c, g
 from pylons.controllers.util import abort
@@ -81,6 +81,8 @@ class WikiPage(tdb_cassandra.Thing):
         return page
     
     def revise(self, content, previous = None, author=None, force=False):
+        if self.content == content:
+            return
         try:
             revision = self.revision
         except:

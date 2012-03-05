@@ -85,6 +85,10 @@
     %else:
      ${UserText(None, text = "", creating = True, name="description", have_form = False)}
     %endif
+    <div id="conflict_box" style="display: none">
+        <div id="conflict_diff"></div>
+        ${UserText(None, text ="", editable = True, creating = True, name="conflict_old", have_form = False)}
+    </div>
     ${error_field("CONFLICT", "description")}
   </%utils:line_field>
   
