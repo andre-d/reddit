@@ -160,6 +160,17 @@
                            (thing.site and thing.site.wikimode == 'anyone'))}
       </table>
     </div>
+    <div class="usertext-edit">
+    <div class="delete-field">
+    <label for="wiki_edit_karma">${_('Subreddit karma required to edit and create wiki pages:')}</label>
+        %if thing.site:
+            <input id="wiki_edit_karma" type="text" name="wiki_edit_karma" 
+                   value = "${getattr(thing.site, 'wiki_edit_karma', 10)}"/>
+        %else:
+            <input id="wiki_edit_karma" type="text" name="wiki_edit_karma" value="10" />
+        %endif
+    </div>
+    </div>
   </%utils:line_field>
   <%utils:line_field title="${_('other options')}">
     <div class="delete-field">

@@ -18,6 +18,9 @@ MAX_PAGE_NAME_LENGTH = 128
 
 
 def may_revise(page):
+    if not c.is_mod and not c.user.can_wiki():
+        if c.user.karma('link', c.wiki_sr) < c.site.wiki_edit_karma:
+            return False
     if page.name in no_revise_pages:
         return False
     if c.wiki_sr.wikimode == 'modonly' and not c.is_mod:
