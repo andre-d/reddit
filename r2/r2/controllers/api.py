@@ -33,7 +33,7 @@ from r2.lib.utils import get_title, sanitize_url, timeuntil, set_last_modified
 from r2.lib.utils import query_string, timefromnow, randstr
 from r2.lib.utils import timeago, tup, filter_links
 from r2.lib.pages import EnemyList, FriendList, ContributorList, ModList, \
-    BannedList, BoringPage, FormPage, CssError, UploadedImage, ClickGadget, \
+    BannedList, WikiBannedList, BoringPage, FormPage, CssError, UploadedImage, ClickGadget, \
     UrlParser, WrappedUser
 from r2.lib.pages import FlairList, FlairCsv, FlairTemplateEditor, \
     FlairSelector
@@ -459,7 +459,7 @@ class ApiController(RedditController):
                 iuser = VByName('id'),
                 container = VByName('container'),
                 type = VOneOf('type', ('friend', 'enemy', 'moderator', 
-                                       'contributor', 'banned')))
+                                       'contributor', 'banned', 'wikibanned')))
     def POST_unfriend(self, nuser, iuser, container, type):
         """
         Handles removal of a friend (a user-user relation) or removal
@@ -475,7 +475,7 @@ class ApiController(RedditController):
         victim = iuser or nuser
 
         if (not c.user_is_admin
-            and (type in ('moderator','contributor','banned')
+            and (type in ('moderator','contributor','banned','wikibanned')
                  and not container.is_moderator(c.user))):
             abort(403, 'forbidden')
         if (type == 'moderator' and not
@@ -489,8 +489,8 @@ class ApiController(RedditController):
         new = fn(victim)
 
         # Log this action
-        if new and type in ('moderator','contributor','banned'):
-            action = dict(banned='unbanuser', moderator='removemoderator', 
+        if new and type in ('moderator','contributor','banned','wikibanned'):
+            action = dict(banned='unbanuser', wikibanned='unwikiban', moderator='removemoderator', 
                           contributor='removecontributor').get(type, None)
             ModAction.create(container, c.user, action, target=victim)
 
@@ -506,7 +506,7 @@ class ApiController(RedditController):
                    friend = VExistingUname('name'),
                    container = VByName('container'),
                    type = VOneOf('type', ('friend', 'moderator',
-                                          'contributor', 'banned')),
+                                          'contributor', 'banned', 'wikibanned')),
                    note = VLength('note', 300))
     def POST_friend(self, form, jquery, ip, friend,
                     container, type, note):
@@ -534,9 +534,9 @@ class ApiController(RedditController):
         new = fn(friend)
 
         # Log this action
-        if new and type in ('moderator','contributor','banned'):
+        if new and type in ('moderator','contributor','banned', 'wikibanned'):
             action = dict(banned='banuser', moderator='addmoderator', 
-                          contributor='addcontributor').get(type, None)
+                          contributor='addcontributor', wikibanned='wikibanned').get(type, None)
             ModAction.create(container, c.user, action, target=friend)
 
         if type == "friend" and c.user.gold:
@@ -552,7 +552,7 @@ class ApiController(RedditController):
         cls = dict(friend=FriendList,
                    moderator=ModList,
                    contributor=ContributorList,
-                   banned=BannedList).get(type)
+                   banned=BannedList,wikibanned=WikiBannedList).get(type)
         form.set_inputs(name = "")
         form.set_html(".status:first", _("added"))
         if new and cls:

@@ -14,8 +14,12 @@ special_pages = ('config/stylesheet', 'config/sidebar')
 MAX_PAGE_NAME_LENGTH = 128
 
 
-def may_revise(page):
+def may_revise(page=None):
+    if c.is_mod:
+        return True
     if not c.user_is_loggedin:
+        return False
+    if c.wiki_sr.is_wikibanned(c.user):
         return False
     if not c.is_mod and not c.user.can_wiki():
         if c.user.karma('link', c.wiki_sr) < c.wiki_sr.wiki_edit_karma:
@@ -23,16 +27,24 @@ def may_revise(page):
     if c.wiki_sr.wikimode == 'modonly' and not c.is_mod:
         if not c.frontpage: # The front page cannot be modonly
             return False
-    level = int(page.permlevel)
+    
     if c.user.can_wiki() == False:
         return False
-    if level == 0:
-        return True
-    if level >= 1:
-        return c.is_mod
-    return False
+    
+    if page:
+        level = int(page.permlevel)
+        if level == 0:
+            return True
+        if level >= 1:
+            return c.is_mod
+        return False
+    
+    return True
+   
 
 def may_view(page):
+    if c.user_is_admin:
+        return True
     level = int(page.permlevel)
     if level < 2:
         return True
@@ -47,9 +59,9 @@ class VWikiPage(Validator):
         Validator.__init__(self, param, **kw)
     
     def run(self, page):
-        page = page.lower()
         if not page:
             page="index"
+        page = page.lower()
         c.page = page
         if not c.is_mod and self.modonly:
             abort(403)
@@ -103,4 +115,7 @@ class VWikiPageCreate(Validator):
                 c.error = _('This wiki cannot handle page names of that magnitude!  Please select a page name shorter than %d characters') % MAX_PAGE_NAME_LENGTH
             return False
         except tdb_cassandra.NotFound:
-            return True
+            if not may_revise():
+                abort(403)
+            else:
+                return True

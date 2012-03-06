@@ -37,6 +37,8 @@ class WikiBasePage(Templated):
     def __init__(self, content, action, actions=[], showtitle=False):
         self.actions = actions[:]
         self.actions += [('revisions', _("Recent Edits"), 'moderationlog', False)]
+        if not c.frontpage and c.is_mod:
+            self.actions += [('../about/banned', _("Ban Users From Editing"), 'ban', False)]
         self.base_url = c.wiki_base_url
         if showtitle:
             self.title = _("%s wiki (%s)") % (action, c.wiki_sr.name)

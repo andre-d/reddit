@@ -2789,6 +2789,13 @@ class BannedList(UserList):
 
     def user_ids(self):
         return c.site.banned
+ 
+class WikiBannedList(BannedList):
+    """List of users banned from editing a given wiki"""
+    type = 'wikibanned'
+
+    def user_ids(self):
+        return c.site.wikibanned
 
 class TrafficViewerList(UserList):
     """Traffic share list on /traffic/*"""

@@ -220,6 +220,10 @@ class Subreddit(Thing, Printable):
     @property
     def banned(self):
         return self.banned_ids()
+    
+    @property
+    def wikibanned(self):
+        return self.wikibanned_ids()
 
     @property
     def subscribers(self):
@@ -1056,7 +1060,8 @@ class SRMember(Relation(Subreddit, Account)): pass
 Subreddit.__bases__ += (UserRel('moderator', SRMember),
                         UserRel('contributor', SRMember),
                         UserRel('subscriber', SRMember, disable_ids_fn = True),
-                        UserRel('banned', SRMember))
+                        UserRel('banned', SRMember),
+                        UserRel('wikibanned', SRMember))
 
 class SubredditPopularityByLanguage(tdb_cassandra.View):
     _use_db = True
