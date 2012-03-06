@@ -1161,16 +1161,12 @@ class ApiController(RedditController):
     @api_doc(api_section.subreddits)
     def POST_subreddit_stylesheet(self, form, jquery,
                                   stylesheet_contents = '', prevstyle='', op='save'):
-        if not c.site.can_change_stylesheet(c.user):
+        
+        report, parsed = c.site.parse_css(stylesheet_contents)
+        
+        if not report:
             return self.abort(403,'forbidden')
-
-        if g.css_killswitch:
-            return self.abort(403,'forbidden')
-
-        # validation is expensive.  Validate after we've confirmed
-        # that the changes will be allowed
-        parsed, report = cssfilter.validate_css(stylesheet_contents)
-
+        
         if report.errors:
             error_items = [ CssError(x).render(style='html')
                             for x in sorted(report.errors) ]
@@ -1186,6 +1182,7 @@ class ApiController(RedditController):
         stylesheet_contents_parsed = parsed.cssText if parsed else ''
         # if the css parsed, we're going to apply it (both preview & save)
         jquery.apply_stylesheet(stylesheet_contents_parsed)
+        apply_css = True
         if op == 'save':
             c.site.stylesheet_contents      = stylesheet_contents_parsed
             
@@ -1195,12 +1192,7 @@ class ApiController(RedditController):
                 wiki = WikiPage.create(c.site.name, 'config/stylesheet')
             
             try:
-                wiki.revise(stylesheet_contents, previous=prevstyle, author=c.user.name)
-                c.site.stylesheet_contents = stylesheet_contents_parsed
-                c.site.stylesheet_hash = md5(stylesheet_contents_parsed).hexdigest()
-                set_last_modified(c.site,'stylesheet_contents')
-                c.site._commit()
-                ModAction.create(c.site, c.user, action='editsettings', details='stylesheet')
+                c.site.change_css(stylesheet_contents, parsed, prevstyle)
                 form.find('.conflict_box').hide()
                 form.find('.errors').hide()
                 form.set_html(".status", _('saved'))
@@ -1212,7 +1204,11 @@ class ApiController(RedditController):
                 form.set_inputs(conflict_old = e.r, stylesheet_contents = e.new)
                 form.set_html('#conflict_diff', e.htmldiff)
                 form.find('.errors').show()
-        elif op == 'preview':
+                apply_css = False
+        # if the css parsed, we're going to apply it (both preview & save)
+        if apply_css:
+            jquery.apply_stylesheet(parsed)
+        if op == 'preview':
             # try to find a link to use, otherwise give up and
             # return
             links = cssfilter.find_preview_links(c.site)

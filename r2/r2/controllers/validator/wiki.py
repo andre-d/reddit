@@ -10,9 +10,6 @@ from pylons.i18n import _
 restricted_namespaces = ('reddit/', 'config/', 'special/')
 # Pages which may only be edited by mods, may be in restricted namespaces
 special_pages = ('config/stylesheet', 'config/sidebar')
-# Pages which may not be edited, usually special pages such as stylesheet
-#   todo: make this not required
-no_revise_pages = ('config/stylesheet')
 
 MAX_PAGE_NAME_LENGTH = 128
 
@@ -21,8 +18,6 @@ def may_revise(page):
     if not c.is_mod and not c.user.can_wiki():
         if c.user.karma('link', c.wiki_sr) < c.site.wiki_edit_karma:
             return False
-    if page.name in no_revise_pages:
-        return False
     if c.wiki_sr.wikimode == 'modonly' and not c.is_mod:
         if not c.frontpage: # The front page cannot be modonly
             return False
@@ -50,6 +45,7 @@ class VWikiPage(Validator):
         self.restricted = restricted
         self.modonly = modonly
         Validator.__init__(self, param, **kw)
+    
     def run(self, page):
         page = page.lower()
         if not page:
