@@ -33,7 +33,7 @@ from listingcontroller import CommentsController
 
 from listingcontroller import MyredditsController
 
-from wiki import WikiController
+from wiki import WikiController, WikiapiController
 
 from feedback import FeedbackController
 from front import FormsController

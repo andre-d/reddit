@@ -13,10 +13,9 @@ class WikiView(Templated):
         Templated.__init__(self)
 
 class WikiEditPage(Templated):
-    def __init__(self, page_content, previous, conflict = None):
+    def __init__(self, page_content, previous):
         self.page_content = page_content
         self.previous = previous
-        self.conflict = conflict
         self.base_url = c.wiki_base_url
         Templated.__init__(self)
 
@@ -84,11 +83,9 @@ class WikiNotFound(WikiBase):
         WikiBase.__init__(self, '', actions=actions, showtitle=False, **context)
 
 class WikiEdit(WikiBase):
-    def __init__(self, content, previous, conflict, **context):
-        content = WikiEditPage(content, previous, conflict)
+    def __init__(self, content, previous, **context):
+        content = WikiEditPage(content, previous)
         context['wikiaction'] = 'Editing'
-        if conflict:
-            context['alert'] = _("There was a conflict, someone has edited a similar section after you started editing")
         WikiBase.__init__(self, content, **context)
 
 class WikiSettings(WikiBase):

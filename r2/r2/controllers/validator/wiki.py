@@ -21,16 +21,16 @@ def may_revise(page=None):
         return False
     if c.wiki_sr.is_wikibanned(c.user):
         return False
-    if not c.is_mod and not c.user.can_wiki():
+    if not c.wiki_sr.can_sumit(c.user):
+        return False
+    if c.user.can_wiki() is False:
+        return False
+    if not c.is_mod and c.user.can_wiki() is not True:
         if c.user.karma('link', c.wiki_sr) < c.wiki_sr.wiki_edit_karma:
             return False
     if c.wiki_sr.wikimode == 'modonly' and not c.is_mod:
-        if not c.frontpage: # The front page cannot be modonly
+        if not c.frontpage: # The front page should not be modonly
             return False
-    
-    if c.user.can_wiki() == False:
-        return False
-    
     if page:
         level = int(page.permlevel)
         if level == 0:
@@ -38,7 +38,6 @@ def may_revise(page=None):
         if level >= 1:
             return c.is_mod
         return False
-    
     return True
    
 
@@ -86,7 +85,10 @@ class VWikiPage(Validator):
     
     def ValidVersion(self, version, pageid=None):
         try:
-            return WikiRevision.get(version, pageid)
+            r = WikiRevision.get(version, pageid)
+            if r.is_hidden and not c.is_mod:
+                abort(403)
+            return r
         except (tdb_cassandra.NotFound, ValueError):
             abort(404)
 

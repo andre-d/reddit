@@ -878,6 +878,18 @@ a.author { margin-right: 0.5em; }
     margin: 15px;
 }
 
+.wiki .revision {
+    transition: opacity 500ms;
+    -o-transition: opacity 500ms;
+    -ms-transition: opacity 500ms;
+    -moz-transition: opacity 500ms;
+    -webkit-transition: opacity 500ms;
+}
+
+.wiki .revision.hidden {
+    opacity: .5;
+}
+
 .wiki .icon-menu h2 {
     margin: 5px 0;
 }

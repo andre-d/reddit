@@ -1,9 +1,10 @@
-from pylons import request, g, c
+from pylons import request, g, c, Response
 from reddit_base import RedditController
 from r2.lib.utils import url_links
 from r2.models.wiki import WikiPage, WikiRevision
 from r2.models.subreddit import Subreddit
 from r2.models.modaction import ModAction
+from r2.config.extensions import set_extension
 from r2.lib.template_helpers import add_sr
 from r2.lib.db import tdb_cassandra
 from r2.lib.merge import *
@@ -16,7 +17,9 @@ from r2.lib.filters import safemarkdown
 from validator.wiki import *
 from pylons.i18n import _
 
-page_descriptions = {'config/stylesheet':_("This page is the subreddit css, please edit from the subreddit stylesheet interface"),
+import simplejson
+
+page_descriptions = {'config/stylesheet':_("This page is the subreddit stylesheet, changes here apply to the subreddit css"),
                      'config/sidebar':_("The contents of this page appear on the subreddit sidebar")}
 
 class WikiController(RedditController):
@@ -44,17 +47,14 @@ class WikiController(RedditController):
     @validate(pv = VWikiPageAndVersion(('page', 'l'), restricted=False))
     def GET_wikiRevisions(self, pv, page):
         page, after = pv
-        revisions = page.get_revisions(after=after, count=11)
+        revisions = page.get_revisions(after=after, count=10)
         if not after and revisions:
             revisions[0]._current = True
         last=None
-        # We get an extra revision to determine if there will be any on the next page
-        if len(revisions) > 10:
-            revisions = revisions[:-1]
-            try:
-                last=revisions[-1]._id
-            except IndexError:
-                pass # Should not happen
+        try:
+            last=revisions[-1]._id
+        except IndexError:
+            pass
         return WikiRevisions(revisions, last).render()
     
     @validate(may_create = VWikiPageCreate('page'))
@@ -72,14 +72,9 @@ class WikiController(RedditController):
     def GET_wikiRevise(self, page, message=None, **kw):
         previous = kw.get('previous', page._get('revision'))
         content = kw.get('content', page.content)
-        diffcontent = None
-        revise = None
         if not message and page.name in page_descriptions:
             message = page_descriptions[page.name]
-        if self.editconflict:
-            diffcontent = self.editconflict.htmldiff
-            revise = (self.editconflict.r, diffcontent)
-        return WikiEdit(content, previous, revise, alert=message).render()
+        return WikiEdit(content, previous, alert=message).render()
    
     def GET_wikiRecent(self):
         revisions = WikiRevision.get_recent(c.wiki_sr.name)
@@ -98,27 +93,6 @@ class WikiController(RedditController):
         res = WikiDiscussions(listing).render()
         return res
     
-    @validate(page = VWikiPageRevise('page', restricted=True))
-    def POST_wikiRevise(self, page):
-        try:
-            if page.name == 'config/stylesheet':
-                report, parsed = c.wiki_sr.parse_css(request.POST['content'])
-                if report.errors:
-                    error_items = [x.message for x in sorted(report.errors)]
-                    return self.GET_wikiRevise(page=page.name,
-                            message="Errors with your css. %s" % '.  '.join(error_items),
-                                content=request.POST['content'], previous=request.POST['previous'])
-                c.wiki_sr.change_css(request.POST['content'], parsed, request.POST['previous'])
-            else:
-                page.revise(request.POST['content'], request.POST['previous'], c.user.name)
-                if c.is_mod:
-                    description = _("Page %s edited") % page
-                    ModAction.create(c.wiki_sr, c.user, 'wikirevise', description=description)
-        except ConflictException as e:
-            self.editconflict = e
-            return self.GET_wikiRevise(page=page.name)
-        return self.redirect('%s/%s' % (c.wiki_base_url, page.name))
-    
     @validate(page = VWikiPage('page', restricted=True, modonly=True))
     def GET_wikiSettings(self, page):
         settings = {'permlevel': int(page._get('permlevel', 0))}
@@ -132,7 +106,7 @@ class WikiController(RedditController):
             page.change_permlevel(permlevel)
         except ValueError:
             abort(403)
-        description = _("Page: %s, Changed from %s to %s") % (page.name, oldpermlevel, permlevel)
+        description = 'Page: %s, Changed from %s to %s' % (page.name, oldpermlevel, permlevel)
         ModAction.create(c.wiki_sr, c.user, 'wikipermlevel', description=description)
         return self.GET_wikiSettings(page=page.name)
     
@@ -152,5 +126,39 @@ class WikiController(RedditController):
                 abort(403)
             else:
                 c.wikidisabled = True
-                
-        
+
+class WikiapiController(WikiController):
+    @validate(page = VWikiPageRevise('page', restricted=True))
+    def POST_wikiEdit(self, page):
+        try:
+            if page.name == 'config/stylesheet':
+                report, parsed = c.wiki_sr.parse_css(request.POST['content'])
+                if report.errors:
+                    error_items = [x.message for x in sorted(report.errors)]
+                    c.response = Response()
+                    c.response.status_code = 415
+                    c.response.content = simplejson.dumps({'special_errors': error_items})
+                    return c.response
+                c.wiki_sr.change_css(request.POST['content'], parsed, request.POST['previous'])
+            else:
+                page.revise(request.POST['content'], request.POST['previous'], c.user.name)
+                if c.is_mod:
+                    description = 'Page %s edited' % page.name
+                    ModAction.create(c.wiki_sr, c.user, 'wikirevise', description=description)
+        except ConflictException as e:
+            c.response = Response()
+            c.response.status_code = 409
+            c.response.content = simplejson.dumps({'newcontent': e.new, 'newrevision': page.revision, 'diffcontent': e.htmldiff})
+            return c.response
+        return simplejson.dumps({'success': True})
+    
+    @validate(pv = VWikiPageAndVersion(('page', 'revision')))
+    def POST_wikiRevisionHide(self, pv, page, revision):
+        if not c.is_mod:
+            abort(403)
+        page, revision = pv
+        return simplejson.dumps({'status': revision.toggle_hide()})
+    
+    def pre(self):
+        WikiController.pre(self)
+        set_extension(request.environ, 'json')

@@ -2,11 +2,21 @@
 <div class="icon-menu">
     %if len(thing.revisions):
         %for r in thing.revisions:
-            <h2><a class="reddit-moderationlog" href="${thing.base_url}/${r.page}?v=${r._id}">${_("Edit by ")}${r._get('author', 'Unknown')} in page ${r.page} (${timestamp(r.date)}&nbsp;ago)
-            %if r._get('_current'):
-                (${_("current")})
+            <h2
+                class="revision 
+                %if r.is_hidden:
+                   hidden
+                %endif
+                "
+            ><a class="reddit-moderationlog" href="${thing.base_url}/${r.page}?v=${r._id}">${_("Edit by ")}${r._get('author', 'Unknown')} in page ${r.page} (${timestamp(r.date)}&nbsp;ago)
+            </a>
+            %if c.is_mod:
+                &nbsp;-&nbsp;<a href="#" class="revision_hide" data-revision="${r._id}" data-baseurl="${thing.base_url}" data-page="${r.page}">(Hide From Public)</a>
             %endif
-            </a></h2>
+            %if r._get('_current'):
+                &nbsp;-&nbsp;(${_("current")})
+            %endif
+            </h2>
         %endfor
         %if thing.last:
             <h2><a href="${thing.base_url}/revisions/${c.page}?l=${thing.last}">${_("Next Page")}</a></h2>

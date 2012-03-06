@@ -4,8 +4,14 @@ from pycassa.system_manager import TIME_UUID_TYPE
 from pylons import c, g
 from pylons.controllers.util import abort
 
+# Used for the key/id for pages,
+#   must not be a character allowed in subreddit name
+PAGE_ID_SEP = '\t'
+
+# Page "index" in the subreddit "reddit.com" and a seperator of "\t" becomes:
+#   "reddit.com\tindex"
 def wiki_id(sr, page):
-    return '%s.%s' % (sr, page)
+    return '%s%s%s' % (sr, PAGE_ID_SEP, page)
 
 class WikiPageExists(Exception):
     pass
@@ -17,6 +23,7 @@ class WikiRevision(tdb_cassandra.UuidThing):
     _connection_pool = 'main'
     
     _str_props = ('pageid', 'content', 'author')
+    _bool_props = ('hidden')
     
     @classmethod
     def get(cls, revid, pageid=None):
@@ -24,6 +31,11 @@ class WikiRevision(tdb_cassandra.UuidThing):
         if pageid and wr.pageid != pageid:
             raise ValueError('Revision is not for the expected page')
         return wr
+    
+    def toggle_hide(self):
+        self.hidden = not self.is_hidden
+        self._commit()
+        return self.hidden
     
     @classmethod
     def create(cls, pageid, content, author=None):
@@ -39,7 +51,7 @@ class WikiRevision(tdb_cassandra.UuidThing):
     @classmethod
     def get_recent(cls, sr, count=100):
         raw = WikiRevisionsRecentBySR.query([sr], count=count)
-        revisions = [r for r in raw]
+        revisions = [r for r in raw if not r.is_hidden]
         return revisions
     
     @property
@@ -47,12 +59,17 @@ class WikiRevision(tdb_cassandra.UuidThing):
         return bool(self._get('hidden', False))
     
     @property
+    def info(self):
+        info = self.pageid.split(PAGE_ID_SEP, 1)
+        return {'sr': info[0], 'page': info[1]}
+    
+    @property
     def page(self):
-        return self.pageid.split('.')[1]
+        return self.info['page']
     
     @property
     def sr(self):
-        return self.pageid.split('.')[0]
+        return self.info['sr']
 
 
 class WikiPage(tdb_cassandra.Thing):
@@ -109,9 +126,17 @@ class WikiPage(tdb_cassandra.Thing):
         self._commit()
     
     def get_revisions(self, after=None, count=10):
+        show_hidden = c.is_mod
+        real_count = count
+        count = count if show_hidden else count * 4
         raw = WikiRevisionsByPage.query([self._id], after=after, count=count)
         revisions = [r for r in raw]
-        return revisions
+        if show_hidden or not revisions:
+            return revisions
+        revisions_filtered = [r for r in revisions if not r.is_hidden]
+        if not revisions_filtered:
+            return self.get_revisions(after=revisions[-1]._id, count=real_count)
+        return revisions_filtered[:real_count]
     
     def _commit(self, *a, **kw):
         if not self._id: # Creating a new page

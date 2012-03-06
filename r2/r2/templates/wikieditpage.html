@@ -2,17 +2,23 @@
   from r2.lib.filters import keep_space
 %>
 
-%if thing.conflict:
+<div style="display: none;" id="conflict">
+    <h2 class="error">There was a conflict editing</h2>
     <h1>${_("Your edit")}</h1>
     <em>${_("This edit is for you to resolve the conflict, any text in the box below will not save.")}</em><br/>
-    <textarea>${keep_space(thing.conflict[0])}</textarea>
-    ${unsafe(thing.conflict[1])}
+    <textarea id="youredit"></textarea>
+    <span id="yourdiff"></span>
     <h1>${_("Current edit")}</h1>
-%endif
+</div>
 
-<form method="post">
-    <textarea name="content">${keep_space(thing.page_content)}</textarea>
-    <input type="hidden" name="previous" value="${thing.previous}" /><br/>
+<div style="display: none;" id="special">
+    <h1>Special errors: </h1>
+    <span id="specials" class="error"></span>
+</div>
+
+<form method="post" id="editform" data-baseurl="${thing.base_url}" data-page="${c.page}">
+    <textarea name="content" id="content">${keep_space(thing.page_content)}</textarea>
+    <input type="hidden" id="previous" name="previous" value="${thing.previous}" /><br/>
     <input type="submit" value="${_('Save Page')}" />
     <input type="button" value="${_('Cancel Edit')}"  onclick="location.href='${thing.base_url}/${c.page}'" />
 </form>

@@ -4,11 +4,11 @@ import difflib
 from pylons.i18n import _
 
 class ConflictException(Exception):
-    def __init__(self, new, r, original):
-        self.r = r
+    def __init__(self, new, your, original):
+        self.your = your
         self.new = new
         self.original = original
-        self.htmldiff = make_htmldiff(new, r, _("Current edit"), _("Your edit"))
+        self.htmldiff = make_htmldiff(new, your, _("Current edit"), _("Your edit"))
         Exception.__init__(self)
 
 
