@@ -15,15 +15,15 @@ MAX_PAGE_NAME_LENGTH = 128
 
 
 def may_revise(page):
+    if not c.user_is_loggedin:
+        return False
     if not c.is_mod and not c.user.can_wiki():
-        if c.user.karma('link', c.wiki_sr) < c.site.wiki_edit_karma:
+        if c.user.karma('link', c.wiki_sr) < c.wiki_sr.wiki_edit_karma:
             return False
     if c.wiki_sr.wikimode == 'modonly' and not c.is_mod:
         if not c.frontpage: # The front page cannot be modonly
             return False
     level = int(page.permlevel)
-    if not c.user_is_loggedin:
-        return False
     if c.user.can_wiki() == False:
         return False
     if level == 0:
