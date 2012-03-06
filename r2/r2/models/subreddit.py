@@ -36,10 +36,12 @@ from r2.lib.cache import sgm
 from r2.lib.strings import strings, Score
 from r2.lib.filters import _force_unicode
 from r2.lib.db import tdb_cassandra
-from r2.lib.cache import CL_ONE
-
 from r2.models.wiki import WikiPage
-
+from r2.lib.merge import ConflictException
+from r2.lib.cache import CL_ONE
+from r2.lib.utils import set_last_modified
+from r2.models.wiki import WikiPage
+from md5 import md5
 import os.path
 import random
 
@@ -271,6 +273,28 @@ class Subreddit(Thing, Printable):
             return c.user_is_admin or self.is_moderator(user)
         else:
             return False
+    
+    def parse_css(self, content):
+        from r2.lib import cssfilter
+        if g.css_killswitch or not self.can_change_stylesheet(c.user):
+            return (None, None)
+    
+        parsed, report = cssfilter.validate_css(content)
+        parsed = parsed.cssText if parsed else ''
+        return (report, parsed)
+
+    def change_css(self, content, parsed, prev):
+        from r2.models import ModAction
+        try:
+            wiki = WikiPage.get(self.name, 'config/stylesheet')
+        except tdb_cassandra.NotFound:
+            wiki = WikiPage.create(self.name, 'config/stylesheet')
+        wiki.revise(content, previous=prev, author=c.user.name)
+        self.stylesheet_contents = parsed
+        self.stylesheet_hash = md5(parsed).hexdigest()
+        set_last_modified(self, 'stylesheet_contents')
+        c.site._commit()
+        ModAction.create(self, c.user, action='editsettings', details='stylesheet')
 
     def is_special(self, user):
         return (user

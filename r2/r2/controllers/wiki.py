@@ -69,20 +69,17 @@ class WikiController(RedditController):
         return self.GET_wikiPage(page=page)
     
     @validate(page = VWikiPageRevise('page', restricted=True))
-    def GET_wikiRevise(self, page):
-        message = None
-        try:
-            previous = page.revision
-        except AttributeError:
-            previous = None
+    def GET_wikiRevise(self, page, message=None, **kw):
+        previous = kw.get('previous', page._get('revision'))
+        content = kw.get('content', page.content)
         diffcontent = None
         revise = None
-        if page.name in page_descriptions:
+        if not message and page.name in page_descriptions:
             message = page_descriptions[page.name]
         if self.editconflict:
             diffcontent = self.editconflict.htmldiff
             revise = (self.editconflict.r, diffcontent)
-        return WikiEdit(page.content, previous, revise, alert=message).render()
+        return WikiEdit(content, previous, revise, alert=message).render()
    
     def GET_wikiRecent(self):
         revisions = WikiRevision.get_recent(c.wiki_sr.name)
@@ -104,10 +101,19 @@ class WikiController(RedditController):
     @validate(page = VWikiPageRevise('page', restricted=True))
     def POST_wikiRevise(self, page):
         try:
-            page.revise(request.POST['content'], request.POST['previous'], c.user.name)
-            if c.is_mod:
-                description = _("Page %s edited") % page
-                ModAction.create(c.wiki_sr, c.user, 'wikirevise', description=description)
+            if page.name == 'config/stylesheet':
+                report, parsed = c.wiki_sr.parse_css(request.POST['content'])
+                if report.errors:
+                    error_items = [x.message for x in sorted(report.errors)]
+                    return self.GET_wikiRevise(page=page.name,
+                            message="Errors with your css. %s" % '.  '.join(error_items),
+                                content=request.POST['content'], previous=request.POST['previous'])
+                c.wiki_sr.change_css(request.POST['content'], parsed, request.POST['previous'])
+            else:
+                page.revise(request.POST['content'], request.POST['previous'], c.user.name)
+                if c.is_mod:
+                    description = _("Page %s edited") % page
+                    ModAction.create(c.wiki_sr, c.user, 'wikirevise', description=description)
         except ConflictException as e:
             self.editconflict = e
             return self.GET_wikiRevise(page=page.name)
