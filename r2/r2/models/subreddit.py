@@ -290,6 +290,8 @@ class Subreddit(Thing, Printable):
 
     def change_css(self, content, parsed, prev):
         from r2.models import ModAction
+        if content is None:
+            return
         try:
             wiki = WikiPage.get(self.name, 'config/stylesheet')
         except tdb_cassandra.NotFound:
