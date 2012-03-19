@@ -26,9 +26,9 @@ class WikiRevision(tdb_cassandra.UuidThing):
     _bool_props = ('hidden')
     
     @classmethod
-    def get(cls, revid, pageid=None):
+    def get(cls, revid, pageid):
         wr = cls._byID(revid)
-        if pageid and wr.pageid != pageid:
+        if wr.pageid != pageid:
             raise ValueError('Revision is not for the expected page')
         return wr
     
@@ -59,9 +59,13 @@ class WikiRevision(tdb_cassandra.UuidThing):
         return bool(self._get('hidden', False))
     
     @property
-    def info(self):
-        info = self.pageid.split(PAGE_ID_SEP, 1)
-        return {'sr': info[0], 'page': info[1]}
+    def info(self, sep=PAGE_ID_SEP):
+        info = self.pageid.split(sep, 1)
+        try:
+            return {'sr': info[0], 'page': info[1]}
+        except IndexError:
+            g.log.error('Broken wiki page ID "%s" did PAGE_ID_SEP change?', self.pageid)
+            return {'sr': 'broken', 'page': 'broken'}
     
     @property
     def page(self):

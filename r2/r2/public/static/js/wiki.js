@@ -1,60 +1,61 @@
 $(function() {
     function WikiToggleHide() {
-        var jthis = $(this)
-        var url = jthis.data("baseurl") + "/api/hide/" + jthis.data("revision") + "/" + jthis.data("page")
+        var $this = $(this)
+            ,url = $this.data("baseurl") + "/api/hide/" + $this.data("revision") + "/" + $this.data("page")
+        $this.parent().toggleClass("hidden")
         $.ajax({
             url: url,
             type: 'POST',
             dataType: 'json',
             success: function(data) {
                 if(!data.status) {
-                    jthis.parent().removeClass("hidden")
+                    $this.parent().removeClass("hidden")
                 } else {
-                    jthis.parent().addClass("hidden")
+                    $this.parent().addClass("hidden")
                 }
             }
         })
     }
-    $(".wiki .revision_hide").click(WikiToggleHide)
+    $("body").delegate(".wiki .revision_hide", "click", WikiToggleHide)
     
     function WikiSubmitEdit(event) {
         event.preventDefault()
-        var jthis = $(this)
-        var url = jthis.data("baseurl") + "/api/edit/" + jthis.data("page")
-        var conflict = $(".wiki #conflict");
-        var special = $(".wiki #special");
-        conflict.hide();
+        var $this = $(this)
+            ,url = $this.data("baseurl") + "/api/edit/" + $this.data("page")
+            ,conflict = $(".wiki #conflict")
+            ,special = $(".wiki #special")
+        conflict.hide()
         special.hide()
         $.ajax({
             url: url,
             type: 'POST',
             dataType: 'json',
-            data: jthis.serialize(),
+            data: $this.serialize(),
             success: function() {
-                window.location = jthis.data("baseurl") + "/" + jthis.data("page");
+                window.location = $this.data("baseurl") + "/" + $this.data("page")
             },
             statusCode: {
                 409: function(xhr) {
-                    var info = jQuery.parseJSON(xhr.responseText)
-                    var content = jthis.children("#content");
+                    var info = JSON.parse(xhr.responseText)
+                        ,content = $this.children("#content")
                     conflict.children("#youredit").val(content.val())
                     conflict.children("#yourdiff").html(info.diffcontent)
-                    jthis.children("#previous").val(info.newrevision)
+                    $this.children("#previous").val(info.newrevision)
                     content.val(info.newcontent)
                     conflict.fadeIn('slow')
                 },
                 415: function(xhr) {
-                    var errors = jQuery.parseJSON(xhr.responseText).special_errors;
-                    var specials = special.children("#specials")
-                    specials.html("");
+                    var errors = JSON.parse(xhr.responseText).special_errors
+                        ,specials = special.children("#specials")
+                    specials.empty()
                     for(i in errors) {
                         specials.append(errors[i]+"<br/>")
                     }
-                    special.fadeIn('slow');
+                    special.fadeIn('slow')
                 }
             }
         })
     }
-    $(".wiki #editform").submit(WikiSubmitEdit)
+    $("body").delegate(".wiki #editform", "submit", WikiSubmitEdit)
 })
 
