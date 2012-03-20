@@ -1,5 +1,6 @@
 $(function() {
-    function WikiToggleHide() {
+    function WikiToggleHide(event) {
+        event.preventDefault()
         var $this = $(this)
             ,url = $this.data("baseurl") + "/api/hide/" + $this.data("revision") + "/" + $this.data("page")
         $this.parent().toggleClass("hidden")
