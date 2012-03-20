@@ -23,12 +23,13 @@ page_descriptions = {'config/stylesheet':_("This page is the subreddit styleshee
                      'config/sidebar':_("The contents of this page appear on the subreddit sidebar")}
 
 class WikiController(RedditController):
-    @validate(pv = VWikiPageAndVersion(('page', 'v'), restricted=False))
+    @validate(pv = VWikiPageAndVersion(('page', 'v', 'v2'), restricted=False))
     def GET_wikiPage(self, pv):
-        page, version = pv
+        page, version, version2 = pv
         message = None
         if not page:
             return self.GET_wikiCreate(page=c.page, view=True)
+        diffcontent = None
         if not version:
             content = page.content
             if c.is_mod and page.name in page_descriptions:
@@ -36,17 +37,21 @@ class WikiController(RedditController):
         else:
             content = version.content
             message = _("Viewing revision %s") % version._id
+            diffcontent = page.content
+            difftitle = _("Current revision")
+            if version2:
+                diffcontent = version2.content
+                difftitle = version2._id
         showactions = c.is_mod or (page.name not in special_pages)
         show_settings = False if page.name in special_pages else c.is_mod
         c.allow_styles = True
-        diffcontent = None
         if version:
-            diffcontent = make_htmldiff(content, page.content, version._id, _("Current revision"))
+            diffcontent = make_htmldiff(content, diffcontent, version._id, difftitle)
         return WikiPageView(content, canedit=may_revise(page), showactions=showactions, show_settings=show_settings, alert=message, v=version, diff=diffcontent).render()
     
     @validate(pv = VWikiPageAndVersion(('page', 'l'), restricted=False))
     def GET_wikiRevisions(self, pv, page):
-        page, after = pv
+        page, after, none = pv
         revisions = page.get_revisions(after=after, count=10)
         if not after and revisions:
             revisions[0]._current = True
