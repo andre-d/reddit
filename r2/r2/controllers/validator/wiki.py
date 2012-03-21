@@ -93,14 +93,13 @@ class VWikiPage(Validator):
             abort(404)
 
 class VWikiPageAndVersion(VWikiPage):
-    def run(self, page, version=None, version2=None):
+    def run(self, page, version, version2):
         wp = VWikiPage.run(self, page)
-        if not wp:
-            abort(404)
-        if version:
-            version = self.ValidVersion(version, wp._id)
-        if version2:
-            version2 = self.ValidVersion(version2, wp._id)
+        if wp:
+            if version:
+                version = self.ValidVersion(version, wp._id)
+            if version2:
+                version2 = self.ValidVersion(version2, wp._id)
         return (wp, version, version2)
 
 class VWikiPageRevise(VWikiPage):
@@ -121,6 +120,8 @@ class VWikiPageCreate(Validator):
                 c.error = _('This wiki cannot handle page names of that magnitude!  Please select a page name shorter than %d characters') % MAX_PAGE_NAME_LENGTH
             return False
         except tdb_cassandra.NotFound:
+            if c.frontpage and not c.is_mod:
+                abort(403)
             if not may_revise():
                 abort(403)
             else:
