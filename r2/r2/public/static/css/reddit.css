@@ -894,6 +894,19 @@ a.author { margin-right: 0.5em; }
     margin: 5px 0;
 }
 
+.wikirevisionlisting table tr td {
+    padding-right: 10px;
+    color: #369;
+    font-weight: bold;
+}
+
+.revision_reason {
+    color: black !important;
+    font-weight: normal !important;
+    padding-left: 100px;
+    padding-bottom: 10px;
+}
+
 /* organic listing */
 .organic-listing {
     border: solid 1px gray;

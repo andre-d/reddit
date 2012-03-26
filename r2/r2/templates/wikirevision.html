@@ -1,17 +1,27 @@
 <%namespace file="utils.html" import="timestamp"/>
-<h2
-    class="revision 
-    %if thing.is_hidden:
+<%namespace file="printablebuttons.html" import="ynbutton" />
+
+<tr class="revision reddit-moderationlog 
+    %if thing._hidden:
        hidden
     %endif
-    "
-><a class="reddit-moderationlog" href="/r/${thing.sr}/wiki/${thing.page}?v=${thing._id}">${_("Edit by ")}${thing._get('author', 'Unknown')} in page ${thing.page} (${timestamp(thing.date)}&nbsp;ago)
-%if thing._get('reason'):
-    [${thing.reason}]
-%endif
-</a>
-<br/>
-%if c.is_mod:
-    &nbsp;-&nbsp;<a href="#" class="revision_hide" data-revision="${thing._id}" data-baseurl="/r/${thing.sr}/wiki" data-page="${thing.page}">(Hide From Public)</a>
-%endif
-</h2>
+    ">
+    <td>
+        <table>
+            <tr>
+                <td colspan="2">
+                    <a href="/r/${thing.sr}/wiki/${thing.page}?v=${thing._id}">${_("Edit by ")}${thing._get('author', 'Unknown')} in page ${thing.page} (${timestamp(thing.date)}&nbsp;ago)</a>
+                </td>
+            </tr>
+            %if c.is_mod:
+                <tr>
+                    <td><a href="#" class="revision_hide" data-revision="${thing._id}" data-baseurl="/r/${thing.sr}/wiki" data-page="${thing.page}">(Hide From Public)</a></td>
+                    <td>${ynbutton(_("(Revert To Revision)"), _("Reverted"), "revertrevision", "revert_revision")}</td>
+                </tr>
+            %endif
+            <tr><td colspan="2" class="revision_reason">
+                ${thing._get('reason')}
+            </td></tr>
+        </table>
+    </td>
+</tr>

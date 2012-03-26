@@ -3,19 +3,20 @@ $(function() {
         event.preventDefault()
         var $this = $(this)
             ,url = $this.data("baseurl") + "/api/hide/" + $this.data("revision") + "/" + $this.data("page")
-        $this.parent().toggleClass("hidden")
+            ,$this_parent = $this.parents(".revision");
+        $this_parent.toggleClass("hidden")
         $.ajax({
             url: url,
             type: 'POST',
             dataType: 'json',
             error: function() {
-                $this.parent().toggleClass("hidden")
+                $this_parent.toggleClass("hidden")
             },
             success: function(data) {
                 if(!data.status) {
-                    $this.parent().removeClass("hidden")
+                    $this_parent.removeClass("hidden")
                 } else {
-                    $this.parent().addClass("hidden")
+                    $this_parent.addClass("hidden")
                 }
             }
         })

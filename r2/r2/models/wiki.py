@@ -26,7 +26,7 @@ class WikiRevision(tdb_cassandra.UuidThing, Printable):
     _str_props = ('pageid', 'content', 'author', 'reason')
     _bool_props = ('hidden')
     
-    cache_ignore = set(['subreddit']).union(Printable.cache_ignore)
+    cache_ignore = set(['subreddit'] + list(_str_props)).union(Printable.cache_ignore)
     
     @property
     def author_id(self):
@@ -57,6 +57,8 @@ class WikiRevision(tdb_cassandra.UuidThing, Printable):
     
     @classmethod
     def add_props(cls, user, wrapped):
+        for item in wrapped:
+            item._hidden = item.is_hidden
         Printable.add_props(user, wrapped)
     
     @classmethod

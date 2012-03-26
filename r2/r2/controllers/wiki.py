@@ -58,8 +58,8 @@ class WikiController(RedditController):
         page, after = pv
         revisions = page.get_revisions(after=after, count=10)
         builder = WikiRevisionBuilder(revisions, skip=not c.is_mod, wrap=default_thing_wrapper())
-        listing = WikiRevisionListing(builder)
-        return WikiRevisions(listing.listing()).render()
+        listing = WikiRevisionListing(builder).listing()
+        return WikiRevisions(listing).render()
     
     @validate(may_create = VWikiPageCreate('page'))
     def GET_wikiCreate(self, may_create, page, view=False):
