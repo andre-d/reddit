@@ -18,7 +18,10 @@
 
 <form method="post" id="editform" data-baseurl="${thing.base_url}" data-page="${c.page}">
     <textarea name="content" id="content">${keep_space(thing.page_content)}</textarea>
-    <input type="hidden" id="previous" name="previous" value="${thing.previous}" /><br/>
+    <br/><br/>
+    <label for="reason">Reason for edit</label><br/>
+    <input type="text" name="reason" />
+    <input type="hidden" id="previous" name="previous" value="${thing.previous}" /><br/><br/>
     <input type="submit" value="${_('Save Page')}" />
     <input type="button" value="${_('Cancel Edit')}"  onclick="location.href='${thing.base_url}/${c.page}'" />
 </form>

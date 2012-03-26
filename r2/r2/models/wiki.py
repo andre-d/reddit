@@ -23,7 +23,7 @@ class WikiRevision(tdb_cassandra.UuidThing, Printable):
     _use_db = True
     _connection_pool = 'main'
     
-    _str_props = ('pageid', 'content', 'author')
+    _str_props = ('pageid', 'content', 'author', 'reason')
     _bool_props = ('hidden')
     
     cache_ignore = set(['subreddit']).union(Printable.cache_ignore)
@@ -72,10 +72,12 @@ class WikiRevision(tdb_cassandra.UuidThing, Printable):
         return self.hidden
     
     @classmethod
-    def create(cls, pageid, content, author=None):
+    def create(cls, pageid, content, author=None, reason=None):
         kw = dict(pageid=pageid, content=content)
         if author:
             kw['author'] = author
+        if reason:
+            kw['reason'] = reason
         wr = cls(**kw)
         wr._commit()
         WikiRevisionsByPage.add_object(wr)
@@ -133,7 +135,7 @@ class WikiPage(tdb_cassandra.Thing):
         page._commit()
         return page
     
-    def revise(self, content, previous = None, author=None, force=False):
+    def revise(self, content, previous = None, author=None, force=False, reason=None):
         if self.content == content:
             return
         try:
@@ -147,7 +149,7 @@ class WikiPage(tdb_cassandra.Thing):
                 origcontent = ''
             content = threeWayMerge(origcontent, content, self.content)
         
-        wr = WikiRevision.create(self._id, content, author)
+        wr = WikiRevision.create(self._id, content, author, reason)
         self.content = content
         self.revision = wr._id
         self._commit()

@@ -27,7 +27,7 @@ page_descriptions = {'config/stylesheet':_("This page is the subreddit styleshee
                      'config/sidebar':_("The contents of this page appear on the subreddit sidebar")}
 
 class WikiController(RedditController):
-    @validate(pv = VWikiPageAndVersions(('page', 'v', 'v2'), restricted=False))
+    @validate(pv = VWikiPageAndVersion(('page', 'v', 'v2'), restricted=False))
     def GET_wikiPage(self, pv):
         page, version, version2 = pv
         message = None
@@ -143,9 +143,9 @@ class WikiapiController(WikiController):
                     c.response.status_code = 415
                     c.response.content = simplejson.dumps({'special_errors': error_items})
                     return c.response
-                c.wiki_sr.change_css(request.POST['content'], parsed, request.POST['previous'])
+                c.wiki_sr.change_css(request.POST['content'], parsed, request.POST['previous'], reason=request.POST['reason'])
             else:
-                page.revise(request.POST['content'], request.POST['previous'], c.user.name)
+                page.revise(request.POST['content'], request.POST['previous'], c.user.name, reason=request.POST['reason'])
                 if c.is_mod:
                     description = 'Page %s edited' % page.name
                     ModAction.create(c.wiki_sr, c.user, 'wikirevise', description=description)

@@ -92,22 +92,13 @@ class VWikiPage(Validator):
         except (tdb_cassandra.NotFound, ValueError):
             abort(404)
 
-class VWikiPageAndVersion(VWikiPage):
-    def validate(*versons):
-        versions = []
+class VWikiPageAndVersion(VWikiPage):    
+    def run(self, page, *versions):
+        wp = VWikiPage.run(self, page)
+        validated = []
         for v in versions:
-            v = self.ValidVersion(version, wp._id) if v else None
-            versions += [v]
-        return tuple(versions)
-    
-    def run(self, page, version=None):
-        wp = VWikiPage.run(self, page)
-        return tuple([wp] + self.validate(version))
-
-class VWikiPageAndVersions(VWikiPageAndVersion):
-    def run(self, page, version=None, version2=None):
-        wp = VWikiPage.run(self, page)
-        return tuple([wp] + self.validate(version, version2))
+            validated += [self.ValidVersion(v, wp._id) if v else None]
+        return tuple([wp] + validated)
 
 class VWikiPageRevise(VWikiPage):
     def run(self, page):

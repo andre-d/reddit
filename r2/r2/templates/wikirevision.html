@@ -6,7 +6,11 @@
     %endif
     "
 ><a class="reddit-moderationlog" href="/r/${thing.sr}/wiki/${thing.page}?v=${thing._id}">${_("Edit by ")}${thing._get('author', 'Unknown')} in page ${thing.page} (${timestamp(thing.date)}&nbsp;ago)
+%if thing._get('reason'):
+    [${thing.reason}]
+%endif
 </a>
+<br/>
 %if c.is_mod:
     &nbsp;-&nbsp;<a href="#" class="revision_hide" data-revision="${thing._id}" data-baseurl="/r/${thing.sr}/wiki" data-page="${thing.page}">(Hide From Public)</a>
 %endif
