@@ -71,6 +71,7 @@ class WikiPageView(WikiBase):
             actions += [('revisions', _("View Revisions"), 'moderationlog', True)]
             if context.get('show_settings'):
                 actions += [('settings', _("Page Settings"), 'edit', True)]
+        actions += [('discussions', _("Discussions For This Page"), 'moderationlog', True)]
         content = WikiView(content, diff=diff)
         WikiBase.__init__(self, content, actions=actions, **context)
 
