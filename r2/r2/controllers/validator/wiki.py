@@ -93,7 +93,7 @@ class VWikiPage(Validator):
             abort(404)
 
 class VWikiPageAndVersion(VWikiPage):
-    def run(self, page, version, version2):
+    def run(self, page, version=None, version2=None):
         wp = VWikiPage.run(self, page)
         if wp:
             if version:
