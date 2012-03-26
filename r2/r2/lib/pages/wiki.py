@@ -26,10 +26,8 @@ class WikiPageSettings(Templated):
         Templated.__init__(self)
 
 class WikiPageRevisions(Templated):
-    def __init__(self, revisions, last):
+    def __init__(self, revisions):
         self.revisions = revisions
-        self.last = last
-        self.base_url = c.wiki_base_url
         Templated.__init__(self)
 
 class WikiBasePage(Templated):
@@ -95,14 +93,14 @@ class WikiSettings(WikiBase):
         WikiBase.__init__(self, content, **context)
 
 class WikiRevisions(WikiBase):
-    def __init__(self, revisions, last, **context):
-        content = WikiPageRevisions(revisions, last)
+    def __init__(self, revisions, **context):
+        content = WikiPageRevisions(revisions)
         context['wikiaction'] = _("Revisions for")
         WikiBase.__init__(self, content, **context)
 
 class WikiRecent(WikiBase):
     def __init__(self, revisions, **context):
-        content = WikiPageRevisions(revisions, last=None)
+        content = WikiPageRevisions(revisions)
         context['wikiaction'] = _("Revisions for")
         WikiBase.__init__(self, content, **context)
 

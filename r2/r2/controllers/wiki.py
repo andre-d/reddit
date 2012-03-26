@@ -4,10 +4,13 @@ from r2.lib.utils import url_links
 from r2.models.wiki import WikiPage, WikiRevision
 from r2.models.subreddit import Subreddit
 from r2.models.modaction import ModAction
+from r2.models.builder import WikiRevisionBuilder
 from r2.config.extensions import set_extension
 from r2.lib.template_helpers import add_sr
 from r2.lib.db import tdb_cassandra
+from r2.models.listing import WikiRevisionListing
 from r2.lib.merge import *
+from r2.lib.pages.things import default_thing_wrapper
 from r2.lib.pages import BoringPage
 from r2.lib.pages.wiki import *
 from reddit_base import base_listing
@@ -16,6 +19,7 @@ from pylons.controllers.util import abort
 from r2.lib.filters import safemarkdown
 from validator.wiki import *
 from pylons.i18n import _
+from r2.lib.pages import PaneStack
 
 import simplejson
 
@@ -23,7 +27,7 @@ page_descriptions = {'config/stylesheet':_("This page is the subreddit styleshee
                      'config/sidebar':_("The contents of this page appear on the subreddit sidebar")}
 
 class WikiController(RedditController):
-    @validate(pv = VWikiPageAndVersion(('page', 'v', 'v2'), restricted=False))
+    @validate(pv = VWikiPageAndVersions(('page', 'v', 'v2'), restricted=False))
     def GET_wikiPage(self, pv):
         page, version, version2 = pv
         message = None
@@ -51,16 +55,11 @@ class WikiController(RedditController):
     
     @validate(pv = VWikiPageAndVersion(('page', 'l'), restricted=False))
     def GET_wikiRevisions(self, pv, page):
-        page, after, none = pv
+        page, after = pv
         revisions = page.get_revisions(after=after, count=10)
-        if not after and revisions:
-            revisions[0]._current = True
-        last=None
-        try:
-            last=revisions[-1]._id
-        except IndexError:
-            pass
-        return WikiRevisions(revisions, last).render()
+        builder = WikiRevisionBuilder(revisions, skip=not c.is_mod, wrap=default_thing_wrapper())
+        listing = WikiRevisionListing(builder)
+        return WikiRevisions(listing.listing()).render()
     
     @validate(may_create = VWikiPageCreate('page'))
     def GET_wikiCreate(self, may_create, page, view=False):
@@ -83,7 +82,9 @@ class WikiController(RedditController):
    
     def GET_wikiRecent(self):
         revisions = WikiRevision.get_recent(c.wiki_sr.name)
-        return WikiRecent(revisions).render()
+        builder = WikiRevisionBuilder(revisions, skip=not c.is_mod, wrap=default_thing_wrapper())
+        listing = WikiRevisionListing(builder).listing()
+        return WikiRecent(listing).render()
     
     @base_listing
     @validate(page = VWikiPage('page', restricted=True))
@@ -94,9 +95,7 @@ class WikiController(RedditController):
                             num = num, after = after, reverse = reverse,
                             count = count, skip = False)
         listing = LinkListing(builder).listing()
-
-        res = WikiDiscussions(listing).render()
-        return res
+        return WikiDiscussions(listing).render()
     
     @validate(page = VWikiPage('page', restricted=True, modonly=True))
     def GET_wikiSettings(self, page):

@@ -3,6 +3,7 @@ from r2.lib.merge import *
 from pycassa.system_manager import TIME_UUID_TYPE
 from pylons import c, g
 from pylons.controllers.util import abort
+from r2.models.printable import Printable
 
 # Used for the key/id for pages,
 #   must not be a character allowed in subreddit name
@@ -16,7 +17,7 @@ def wiki_id(sr, page):
 class WikiPageExists(Exception):
     pass
 
-class WikiRevision(tdb_cassandra.UuidThing):
+class WikiRevision(tdb_cassandra.UuidThing, Printable):
     """ Contains content (markdown), author of the edit, page the edit belongs to, and datetime of the edit """
     
     _use_db = True
@@ -24,6 +25,39 @@ class WikiRevision(tdb_cassandra.UuidThing):
     
     _str_props = ('pageid', 'content', 'author')
     _bool_props = ('hidden')
+    
+    cache_ignore = set(['subreddit']).union(Printable.cache_ignore)
+    
+    @property
+    def author_id(self):
+        return 1
+
+    @property
+    def sr_id(self):
+        return 1
+    @property
+    def _ups(self):
+        return 0
+
+    @property
+    def _downs(self):
+        return 0
+
+    @property
+    def _deleted(self):
+        return False
+
+    @property
+    def _spam(self):
+        return False
+
+    @property
+    def reported(self):
+        return False
+    
+    @classmethod
+    def add_props(cls, user, wrapped):
+        Printable.add_props(user, wrapped)
     
     @classmethod
     def get(cls, revid, pageid):
@@ -50,9 +84,7 @@ class WikiRevision(tdb_cassandra.UuidThing):
     
     @classmethod
     def get_recent(cls, sr, count=100):
-        raw = WikiRevisionsRecentBySR.query([sr], count=count)
-        revisions = [r for r in raw if not r.is_hidden]
-        return revisions
+        return WikiRevisionsRecentBySR.query([sr], count=count)
     
     @property
     def is_hidden(self):
@@ -130,17 +162,7 @@ class WikiPage(tdb_cassandra.Thing):
         self._commit()
     
     def get_revisions(self, after=None, count=10):
-        show_hidden = c.is_mod
-        real_count = count
-        count = count if show_hidden else count * 4
-        raw = WikiRevisionsByPage.query([self._id], after=after, count=count)
-        revisions = [r for r in raw]
-        if show_hidden or not revisions:
-            return revisions
-        revisions_filtered = [r for r in revisions if not r.is_hidden]
-        if not revisions_filtered:
-            return self.get_revisions(after=revisions[-1]._id, count=real_count)
-        return revisions_filtered[:real_count]
+        return WikiRevisionsByPage.query([self._id], after=after, count=count)
     
     def _commit(self, *a, **kw):
         if not self._id: # Creating a new page

@@ -93,14 +93,21 @@ class VWikiPage(Validator):
             abort(404)
 
 class VWikiPageAndVersion(VWikiPage):
+    def validate(*versons):
+        versions = []
+        for v in versions:
+            v = self.ValidVersion(version, wp._id) if v else None
+            versions += [v]
+        return tuple(versions)
+    
+    def run(self, page, version=None):
+        wp = VWikiPage.run(self, page)
+        return tuple([wp] + self.validate(version))
+
+class VWikiPageAndVersions(VWikiPageAndVersion):
     def run(self, page, version=None, version2=None):
         wp = VWikiPage.run(self, page)
-        if wp:
-            if version:
-                version = self.ValidVersion(version, wp._id)
-            if version2:
-                version2 = self.ValidVersion(version2, wp._id)
-        return (wp, version, version2)
+        return tuple([wp] + self.validate(version, version2))
 
 class VWikiPageRevise(VWikiPage):
     def run(self, page):

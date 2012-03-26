@@ -483,6 +483,10 @@ class SearchBuilder(IDBuilder):
         else:
             return True
 
+class WikiRevisionBuilder(QueryBuilder):
+    def keep_item(self, item):
+        return not item.is_hidden
+
 def empty_listing(*things):
     parent_name = None
     for t in things:

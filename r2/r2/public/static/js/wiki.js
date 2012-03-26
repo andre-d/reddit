@@ -8,6 +8,9 @@ $(function() {
             url: url,
             type: 'POST',
             dataType: 'json',
+            error: function() {
+                $this.parent().toggleClass("hidden")
+            },
             success: function(data) {
                 if(!data.status) {
                     $this.parent().removeClass("hidden")

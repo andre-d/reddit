@@ -1,0 +1,13 @@
+<%namespace file="utils.html" import="timestamp"/>
+<h2
+    class="revision 
+    %if thing.is_hidden:
+       hidden
+    %endif
+    "
+><a class="reddit-moderationlog" href="/r/${thing.sr}/wiki/${thing.page}?v=${thing._id}">${_("Edit by ")}${thing._get('author', 'Unknown')} in page ${thing.page} (${timestamp(thing.date)}&nbsp;ago)
+</a>
+%if c.is_mod:
+    &nbsp;-&nbsp;<a href="#" class="revision_hide" data-revision="${thing._id}" data-baseurl="/r/${thing.sr}/wiki" data-page="${thing.page}">(Hide From Public)</a>
+%endif
+</h2>
