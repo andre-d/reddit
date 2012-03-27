@@ -35,6 +35,7 @@ class WikiRevision(tdb_cassandra.UuidThing, Printable):
     @property
     def sr_id(self):
         return 1
+    
     @property
     def _ups(self):
         return 0

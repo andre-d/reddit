@@ -288,15 +288,16 @@ class Subreddit(Thing, Printable):
         parsed = parsed.cssText if parsed else ''
         return (report, parsed)
 
-    def change_css(self, content, parsed, prev, reason=None):
+    def change_css(self, content, parsed, prev=None, reason=None, author=None, force=False):
         from r2.models import ModAction
+        author = author if author else c.user.name
         if content is None:
             return
         try:
             wiki = WikiPage.get(self.name, 'config/stylesheet')
         except tdb_cassandra.NotFound:
             wiki = WikiPage.create(self.name, 'config/stylesheet')
-        wiki.revise(content, previous=prev, author=c.user.name, reason=reason)
+        wiki.revise(content, previous=prev, author=author, reason=reason, force=force)
         self.stylesheet_contents = parsed
         self.stylesheet_hash = md5(parsed).hexdigest()
         set_last_modified(self, 'stylesheet_contents')

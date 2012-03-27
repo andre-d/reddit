@@ -16,7 +16,7 @@
             %if c.is_mod:
                 <tr>
                     <td><a href="#" class="revision_hide" data-revision="${thing._id}" data-baseurl="/r/${thing.sr}/wiki" data-page="${thing.page}">(Hide From Public)</a></td>
-                    <td>${ynbutton(_("(Revert To Revision)"), _("Reverted"), "revertrevision", "revert_revision")}</td>
+                    <td>${ynbutton(_("(Revert To Revision)"), _("Done"), "../r/%s/wiki/api/revert/%s/%s" % (thing.sr, thing._id, thing.page), callback="ReloadPage")}</td>
                 </tr>
             %endif
             <tr><td colspan="2" class="revision_reason">

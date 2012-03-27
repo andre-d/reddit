@@ -162,6 +162,23 @@ class WikiapiController(WikiController):
             abort(403)
         page, revision = pv
         return simplejson.dumps({'status': revision.toggle_hide()})
+   
+    @validate(pv = VWikiPageAndVersion(('page', 'revision')))
+    def POST_wikiRevisionRevert(self, pv, page, revision):
+        if not c.is_mod:
+            abort(403)
+        page, revision = pv
+        content = revision.content
+        author = revision._get('author')
+        reason = _("Reverted by %s to %s") % (c.user.name, revision._id)
+        if page.name == 'config/stylesheet':
+            report, parsed = c.wiki_sr.parse_css(content)
+            if report.errors:
+                abort(403)
+            c.wiki_sr.change_css(content, parsed, prev=None, reason=reason, force=True)
+        else:
+            page.revise(content, author=author, reason=reason, force=True)
+        return simplejson.dumps({'success': True})
     
     def pre(self):
         WikiController.pre(self)

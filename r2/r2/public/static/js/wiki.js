@@ -64,3 +64,4 @@ $(function() {
     $("body").delegate(".wiki #editform", "submit", WikiSubmitEdit)
 })
 
+function ReloadPage() {location.reload()}
