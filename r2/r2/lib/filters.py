@@ -41,6 +41,8 @@ SC_ON = "<!-- SC_ON -->"
 MD_START = '<div class="md">'
 MD_END = '</div>'
 
+WIKI_MD_START = '<div class="md wiki">'
+WIKI_MD_END = '</div>'
 
 def python_websafe(text):
     return text.replace('&', "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
@@ -228,6 +230,34 @@ def safemarkdown(text, nofollow=False, wrap=True, **kwargs):
     else:
         return text
 
+def wikimarkdown(text):
+    from r2.lib.cssfilter import legacy_s3_url
+    def img_swap(tag):
+        name = tag.get('src')
+        # c.wiki_sr is only set inside the wiki controller
+        site = Subreddit._by_name(g.default_sr) if c.site.name == ' reddit.com' else c.site
+        if site.images.has_key(name):
+            url = c.site.images[name]
+            url = legacy_s3_url(url)
+            tag['src'] = url
+        else:
+            tag.extract()
+    nofollow = True
+    target = None
+    text = snudown.markdown(_force_utf8(text), nofollow, target, renderer=snudown.RENDERER_WIKI)
+    
+    soup = BeautifulSoup(text)
+    images = soup.img
+    
+    if images:
+        if len(images) == 0:
+            img_swap(images)
+        else:
+            for i in images:
+                img_swap(i)
+        text = str(soup.contents[0])
+    
+    return SC_OFF + WIKI_MD_START + text + WIKI_MD_END + SC_ON
 
 def keep_space(text):
     text = websafe(text)

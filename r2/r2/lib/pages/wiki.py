@@ -2,12 +2,12 @@ from r2.lib.pages.pages import Reddit
 from pylons import c
 from r2.lib.wrapped import Templated
 from r2.lib.menus import PageNameNav
-from r2.lib.filters import safemarkdown
+from r2.lib.filters import wikimarkdown
 from pylons.i18n import _
 
 class WikiView(Templated):
     def __init__(self, content, diff=None):
-        self.page_content = safemarkdown(content)
+        self.page_content = wikimarkdown(content)
         self.diff = diff
         self.base_url = c.wiki_base_url
         Templated.__init__(self)

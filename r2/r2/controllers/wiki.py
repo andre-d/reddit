@@ -16,7 +16,6 @@ from r2.lib.pages.wiki import *
 from reddit_base import base_listing
 from r2.models import IDBuilder, LinkListing
 from pylons.controllers.util import abort
-from r2.lib.filters import safemarkdown
 from validator.wiki import *
 from pylons.i18n import _
 from r2.lib.pages import PaneStack

@@ -1108,6 +1108,7 @@ a.author { margin-right: 0.5em; }
 .md em { font-style: italic; }
 .md strong em { font-style: italic; font-weight: bold }
 .md img { display: none }
+.md.wiki img { display: block }
 .md ol, .md ul { margin: 10px 2em; }
 .md ul { list-style: disc outside }
 .md ol { list-style: decimal outside }
