@@ -232,10 +232,11 @@ def safemarkdown(text, nofollow=False, wrap=True, **kwargs):
 
 def wikimarkdown(text):
     from r2.lib.cssfilter import legacy_s3_url
+    from r2.models import DefaultSR
     def img_swap(tag):
         name = tag.get('src')
         # c.wiki_sr is only set inside the wiki controller
-        site = Subreddit._by_name(g.default_sr) if c.site.name == ' reddit.com' else c.site
+        site = Subreddit._by_name(g.default_sr) if isinstance(c.site, DefaultSR) else c.site
         if site.images.has_key(name):
             url = c.site.images[name]
             url = legacy_s3_url(url)

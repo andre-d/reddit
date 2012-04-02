@@ -14,7 +14,7 @@ from r2.lib.pages.things import default_thing_wrapper
 from r2.lib.pages import BoringPage
 from r2.lib.pages.wiki import *
 from reddit_base import base_listing
-from r2.models import IDBuilder, LinkListing
+from r2.models import IDBuilder, LinkListing, DefaultSR
 from pylons.controllers.util import abort
 from validator.wiki import *
 from pylons.i18n import _
@@ -115,7 +115,7 @@ class WikiController(RedditController):
     
     def pre(self):
         RedditController.pre(self)
-        c.frontpage = c.site.name == ' reddit.com'
+        c.frontpage = isinstance(c.site, DefaultSR)
         c.wiki_sr = Subreddit._by_name(g.default_sr) if c.frontpage else c.site
         c.wiki_base_url = '/wiki' if c.frontpage else '/r/'+c.wiki_sr.name+'/wiki'
         c.is_mod = False
