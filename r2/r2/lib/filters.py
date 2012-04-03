@@ -239,7 +239,7 @@ def wikimarkdown(text):
         site = Subreddit._by_name(g.default_sr) if isinstance(c.site, DefaultSR) else c.site
         if site.images.has_key(name):
             url = c.site.images[name]
-            url = legacy_s3_url(url)
+            url = legacy_s3_url(url, site)
             tag['src'] = url
         else:
             tag.extract()
