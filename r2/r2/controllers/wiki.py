@@ -14,9 +14,10 @@ from r2.lib.pages.things import default_thing_wrapper
 from r2.lib.pages import BoringPage
 from r2.lib.pages.wiki import *
 from reddit_base import base_listing
-from r2.models import IDBuilder, LinkListing, DefaultSR
+from r2.models import IDBuilder, LinkListing, FakeSubreddit
 from pylons.controllers.util import abort
 from validator.wiki import *
+from validator.validator import VInt
 from pylons.i18n import _
 from r2.lib.pages import PaneStack
 
@@ -101,10 +102,10 @@ class WikiController(RedditController):
         settings = {'permlevel': int(page._get('permlevel', 0))}
         return WikiSettings(settings).render()
     
-    @validate(page = VWikiPage('page', restricted=True, modonly=True))
-    def POST_wikiSettings(self, page):
+    @validate(page = VWikiPage('page', restricted=True, modonly=True),\
+              permlevel = VInt('permlevel'))
+    def POST_wikiSettings(self, page, permlevel):
         oldpermlevel = page.permlevel
-        permlevel = request.POST['permlevel']
         try:
             page.change_permlevel(permlevel)
         except ValueError:
@@ -115,7 +116,7 @@ class WikiController(RedditController):
     
     def pre(self):
         RedditController.pre(self)
-        c.frontpage = isinstance(c.site, DefaultSR)
+        c.frontpage = isinstance(c.site, FakeSubreddit)
         c.wiki_sr = Subreddit._by_name(g.default_sr) if c.frontpage else c.site
         c.wiki_base_url = '/wiki' if c.frontpage else '/r/'+c.wiki_sr.name+'/wiki'
         c.is_mod = False
@@ -131,8 +132,9 @@ class WikiController(RedditController):
                 c.wikidisabled = True
 
 class WikiapiController(WikiController):
-    @validate(page = VWikiPageRevise('page', restricted=True))
-    def POST_wikiEdit(self, page):
+    @validate(pageandprevious = VWikiPageRevise(('page', 'previous'), restricted=True))
+    def POST_wikiEdit(self, pageandprevious):
+        page, previous = pageandprevious
         try:
             if page.name == 'config/stylesheet':
                 report, parsed = c.wiki_sr.parse_css(request.POST['content'])
@@ -142,9 +144,10 @@ class WikiapiController(WikiController):
                     c.response.status_code = 415
                     c.response.content = simplejson.dumps({'special_errors': error_items})
                     return c.response
-                c.wiki_sr.change_css(request.POST['content'], parsed, request.POST['previous'], reason=request.POST['reason'])
+                c.wiki_sr.change_css(request.POST['content'], parsed, previous, reason=request.POST['reason'])
             else:
-                page.revise(request.POST['content'], request.POST['previous'], c.user.name, reason=request.POST['reason'])
+                page.revise(request.POST['content'], previous._id, c.user.name, reason=request.POST['reason'])
+            
                 if c.is_mod:
                     description = 'Page %s edited' % page.name
                     ModAction.create(c.wiki_sr, c.user, 'wikirevise', description=description)
@@ -154,6 +157,16 @@ class WikiapiController(WikiController):
             c.response.content = simplejson.dumps({'newcontent': e.new, 'newrevision': page.revision, 'diffcontent': e.htmldiff})
             return c.response
         return simplejson.dumps({'success': True})
+    
+  #  @validate(page = VWikiPage('page'), user = VExistingUname('user'))
+   # def POST_wikiRevisionHide(self, action, page, user):
+      #  if not c.is_mod:
+        #    abort(403)
+      #  if action == 'remove':
+           # // unban
+       # else:
+          #  // ban
+       # return simplejson.dumps({'status': revision.toggle_hide()})
     
     @validate(pv = VWikiPageAndVersion(('page', 'revision')))
     def POST_wikiRevisionHide(self, pv, page, revision):

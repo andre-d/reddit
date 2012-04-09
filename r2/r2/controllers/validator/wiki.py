@@ -21,11 +21,13 @@ def may_revise(page=None):
         return False
     if c.wiki_sr.is_wikibanned(c.user):
         return False
-    if not c.wiki_sr.can_sumit(c.user):
+    if not c.wiki_sr.can_submit(c.user):
         return False
     if c.user.can_wiki() is False:
         return False
     if not c.is_mod and c.user.can_wiki() is not True:
+        if c.wiki_sr.is_wikirevise(c.user):
+            return True
         if c.user.karma('link', c.wiki_sr) < c.wiki_sr.wiki_edit_karma:
             return False
     if c.wiki_sr.wikimode == 'modonly' and not c.is_mod:
@@ -84,6 +86,8 @@ class VWikiPage(Validator):
                     abort(403)
     
     def ValidVersion(self, version, pageid=None):
+        if not version:
+            return
         try:
             r = WikiRevision.get(version, pageid)
             if r.is_hidden and not c.is_mod:
@@ -101,12 +105,15 @@ class VWikiPageAndVersion(VWikiPage):
         return tuple([wp] + validated)
 
 class VWikiPageRevise(VWikiPage):
-    def run(self, page):
+    def run(self, page, previous=None):
         wp = VWikiPage.run(self, page)
         if not wp:
             abort(404)
         if not may_revise(wp):
             abort(403)
+        if previous:
+            prev = self.ValidVersion(previous, wp._id)
+            return (wp, prev)
         return wp
 
 class VWikiPageCreate(Validator):
@@ -120,6 +127,8 @@ class VWikiPageCreate(Validator):
         except tdb_cassandra.NotFound:
             if c.frontpage and not c.is_mod:
                 abort(403)
+            if c.wiki_sr.is_wikicreate(c.user):
+                return True
             if not may_revise():
                 abort(403)
             else:

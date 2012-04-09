@@ -33,7 +33,8 @@ from r2.lib.utils import get_title, sanitize_url, timeuntil, set_last_modified
 from r2.lib.utils import query_string, timefromnow, randstr
 from r2.lib.utils import timeago, tup, filter_links
 from r2.lib.pages import EnemyList, FriendList, ContributorList, ModList, \
-    BannedList, WikiBannedList, BoringPage, FormPage, CssError, UploadedImage, ClickGadget, \
+    BannedList, WikiBannedList, WikiMayCreateList, WikiMayReviseList, \
+    BoringPage, FormPage, CssError, UploadedImage, ClickGadget, \
     UrlParser, WrappedUser
 from r2.lib.pages import FlairList, FlairCsv, FlairTemplateEditor, \
     FlairSelector
@@ -477,8 +478,9 @@ class ApiController(RedditController):
                 nuser = VExistingUname('name'),
                 iuser = VByName('id'),
                 container = nop('container'),
-                type = VOneOf('type', ('friend', 'enemy', 'moderator', 
-                                       'contributor', 'banned', 'wikibanned')))
+                type = VOneOf('type', ('friend', 'enemy', 'moderator',
+                             'wikicreate', 'wikirevise', 'wikibanned', 
+                                            'contributor', 'banned')))
     @api_doc(api_section.users)
     def POST_unfriend(self, nuser, iuser, container, type):
         """
@@ -488,7 +490,7 @@ class ApiController(RedditController):
         or by fullname (iuser).  If type is friend or enemy, 'container'
         will be the current user, otherwise the subreddit must be set.
         """
-        sr_types = ('moderator', 'contributor', 'banned', 'wikibanned')
+        sr_types = ('moderator', 'contributor', 'banned', 'wikibanned', 'wikicreate', 'wikirevise')
         if type in sr_types:
             container = c.site
         else:
@@ -514,8 +516,9 @@ class ApiController(RedditController):
 
         # Log this action
         if new and type in sr_types:
-            action = dict(banned='unbanuser', wikibanned='unwikiban', moderator='removemoderator', 
-                          contributor='removecontributor').get(type, None)
+            action = dict(banned='unbanuser', wikicreate='unwikicreate',
+                          wikirevise='unwikirevise',wikibanned='unwikiban',
+                          moderator='removemoderator',contributor='removecontributor').get(type, None)
             ModAction.create(container, c.user, action, target=victim)
 
         if type == "friend" and c.user.gold:
@@ -529,7 +532,7 @@ class ApiController(RedditController):
                    ip = ValidIP(),
                    friend = VExistingUname('name'),
                    container = nop('container'),
-                   type = VOneOf('type', ('friend', 'moderator',
+                   type = VOneOf('type', ('friend', 'moderator', 'wikicreate', 'wikirevise',
                                           'contributor', 'banned', 'wikibanned')),
                    note = VLength('note', 300))
     @api_doc(api_section.users)
@@ -566,7 +569,8 @@ class ApiController(RedditController):
 
         # Log this action
         if new and type in sr_types:
-            action = dict(banned='banuser', moderator='addmoderator', 
+            action = dict(banned='banuser', moderator='addmoderator',
+                          wikicreate='wikicreate', wikirevise='wikirevise',
                           contributor='addcontributor', wikibanned='wikibanned').get(type, None)
             ModAction.create(container, c.user, action, target=friend)
 
@@ -583,6 +587,7 @@ class ApiController(RedditController):
         cls = dict(friend=FriendList,
                    moderator=ModList,
                    contributor=ContributorList,
+                   wikicreate=WikiMayCreateList, wikirevise=WikiMayReviseList,
                    banned=BannedList,wikibanned=WikiBannedList).get(type)
         form.set_inputs(name = "")
         form.set_html(".status:first", _("added"))

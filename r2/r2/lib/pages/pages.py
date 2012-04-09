@@ -2867,6 +2867,36 @@ class WikiBannedList(BannedList):
     def user_ids(self):
         return c.site.wikibanned
 
+class WikiMayCreateList(UserList):
+    """List of users banned from editing a given wiki"""
+    type = 'wikicreate'
+
+    @property
+    def form_title(self):
+        return _('add a wiki page creator')
+
+    @property
+    def table_title(self):
+        return _('wiki page creators')
+     
+    def user_ids(self):
+        return c.site.wikicreate
+
+class WikiMayReviseList(UserList):
+    """List of users banned from editing a given wiki"""
+    type = 'wikirevise'
+
+    @property
+    def form_title(self):
+        return _('add a wiki page editor')
+
+    @property
+    def table_title(self):
+        return _('wiki page editors')
+
+    def user_ids(self):
+        return c.site.wikirevise
+
 class TrafficViewerList(UserList):
     """Traffic share list on /traffic/*"""
     destination = "traffic_viewer"
