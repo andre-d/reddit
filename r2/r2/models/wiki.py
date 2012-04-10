@@ -17,6 +17,11 @@ def wiki_id(sr, page):
 class WikiPageExists(Exception):
     pass
 
+class WikiPageEditors(tdb_cassandra.View):
+    _use_db = True
+    _value_type = 'str'
+    _connection_pool = 'main'
+
 class WikiRevision(tdb_cassandra.UuidThing, Printable):
     """ Contains content (markdown), author of the edit, page the edit belongs to, and datetime of the edit """
     
@@ -137,6 +142,18 @@ class WikiPage(tdb_cassandra.Thing):
         page = cls(**kw)
         page._commit()
         return page
+    
+    def remove_editor(self, user):
+        WikiPageEditors._remove(self._id, [user])
+    
+    def add_editor(self, user):
+        WikiPageEditors._set_values(self._id, {user: ''})
+    
+    def get_editors(self):
+        try:
+            return WikiPageEditors._byID(self._id)._values() or []
+        except tdb_cassandra.NotFoundException:
+            return []
     
     def revise(self, content, previous = None, author=None, force=False, reason=None):
         if self.content == content:

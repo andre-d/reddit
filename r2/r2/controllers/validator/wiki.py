@@ -22,6 +22,8 @@ def may_revise(page=None):
     if c.wiki_sr.is_wikibanned(c.user):
         return False
     if not c.wiki_sr.can_submit(c.user):
+        if page and c.user.name in page.get_editors():
+            return True
         return False
     if c.user.can_wiki() is False:
         return False
@@ -37,8 +39,9 @@ def may_revise(page=None):
         level = int(page.permlevel)
         if level == 0:
             return True
-        if level >= 1:
-            return c.is_mod
+        if level == 1:
+            if c.user.name in page.get_editors():
+                return True
         return False
     return True
    

@@ -7,8 +7,8 @@ $(function() {
         $this_parent.toggleClass("hidden")
         $.ajax({
             url: url,
-            type: 'POST',
-            dataType: 'json',
+            type: "POST",
+            dataType: "json",
             error: function() {
                 $this_parent.toggleClass("hidden")
             },
@@ -33,8 +33,8 @@ $(function() {
         special.hide()
         $.ajax({
             url: url,
-            type: 'POST',
-            dataType: 'json',
+            type: "POST",
+            dataType: "json",
             data: $this.serialize(),
             success: function() {
                 window.location = $this.data("baseurl") + "/" + $this.data("page")
@@ -47,7 +47,7 @@ $(function() {
                     conflict.children("#yourdiff").html(info.diffcontent)
                     $this.children("#previous").val(info.newrevision)
                     content.val(info.newcontent)
-                    conflict.fadeIn('slow')
+                    conflict.fadeIn("slow")
                 },
                 415: function(xhr) {
                     var errors = JSON.parse(xhr.responseText).special_errors
@@ -56,12 +56,33 @@ $(function() {
                     for(i in errors) {
                         specials.append(errors[i]+"<br/>")
                     }
-                    special.fadeIn('slow')
+                    special.fadeIn("slow")
                 }
             }
         })
     }
+    
     $("body").delegate(".wiki #editform", "submit", WikiSubmitEdit)
+    
+    function WikiAllowEditor(event) {
+        event.preventDefault()
+        $('#usereditallowerror').hide()
+        var $this = $(this)
+                    ,url = $this.data("baseurl") + "/api/alloweditor/add/" + $this.find("#username").val() + "/" + $this.data("page")
+        $.ajax({
+            url: url,
+            type: "POST",
+            dataType: "json",
+            error: function() {
+                $('#usereditallowerror').show()
+            },
+            success: function(data) {
+                ReloadPage()
+            }
+        })
+        
+    }
+    $("body").delegate("#WikiAllowEditor", "submit", WikiAllowEditor)
 })
 
 function ReloadPage() {location.reload()}

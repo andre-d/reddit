@@ -17,7 +17,7 @@ from reddit_base import base_listing
 from r2.models import IDBuilder, LinkListing, FakeSubreddit
 from pylons.controllers.util import abort
 from validator.wiki import *
-from validator.validator import VInt
+from validator.validator import VInt, VExistingUname
 from pylons.i18n import _
 from r2.lib.pages import PaneStack
 
@@ -100,7 +100,8 @@ class WikiController(RedditController):
     @validate(page = VWikiPage('page', restricted=True, modonly=True))
     def GET_wikiSettings(self, page):
         settings = {'permlevel': int(page._get('permlevel', 0))}
-        return WikiSettings(settings).render()
+        mayedit = page.get_editors()
+        return WikiSettings(settings, mayedit).render()
     
     @validate(page = VWikiPage('page', restricted=True, modonly=True),\
               permlevel = VInt('permlevel'))
@@ -144,7 +145,7 @@ class WikiapiController(WikiController):
                     c.response.status_code = 415
                     c.response.content = simplejson.dumps({'special_errors': error_items})
                     return c.response
-                c.wiki_sr.change_css(request.POST['content'], parsed, previous, reason=request.POST['reason'])
+                c.wiki_sr.change_css(request.POST['content'], parsed, previous._id, reason=request.POST['reason'])
             else:
                 page.revise(request.POST['content'], previous._id, c.user.name, reason=request.POST['reason'])
             
@@ -158,15 +159,22 @@ class WikiapiController(WikiController):
             return c.response
         return simplejson.dumps({'success': True})
     
-  #  @validate(page = VWikiPage('page'), user = VExistingUname('user'))
-   # def POST_wikiRevisionHide(self, action, page, user):
-      #  if not c.is_mod:
-        #    abort(403)
-      #  if action == 'remove':
-           # // unban
-       # else:
-          #  // ban
-       # return simplejson.dumps({'status': revision.toggle_hide()})
+    @validate(page = VWikiPage('page'), user = VExistingUname('user'))
+    def POST_wikiAllowEditor(self, act, page, user):
+        if not page:
+            abort(404)
+        if not c.is_mod:
+            abort(403)
+        if act == 'del':
+            page.remove_editor(c.user)
+        else:
+            if not user:
+                abort(404)
+            try:
+                page.add_editor(user.name)
+            except ValueError:
+                abort(403)
+        return simplejson.dumps({'success': True})
     
     @validate(pv = VWikiPageAndVersion(('page', 'revision')))
     def POST_wikiRevisionHide(self, pv, page, revision):

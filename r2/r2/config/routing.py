@@ -43,6 +43,7 @@ def make_map(global_conf={}, app_conf={}):
     mc('/wiki/api/edit/*page', controller='wikiapi', action='wikiEdit')
     mc('/wiki/api/hide/:revision/*page', controller='wikiapi', action='wikiRevisionHide')
     mc('/wiki/api/revert/:revision/*page', controller='wikiapi', action='wikiRevisionRevert')
+    mc('/wiki/api/alloweditor/:act/:user/*page', controller='wikiapi', action='wikiAllowEditor')
     
     mc('/wiki/*page', controller='wiki', action='wikiPage')
     mc('/wiki/', controller='wiki', action='wikiPage')

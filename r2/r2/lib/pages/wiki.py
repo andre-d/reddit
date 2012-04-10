@@ -20,9 +20,10 @@ class WikiEditPage(Templated):
         Templated.__init__(self)
 
 class WikiPageSettings(Templated):
-    def __init__(self, settings):
+    def __init__(self, settings, mayedit):
         self.permlevel = settings['permlevel']
         self.base_url = c.wiki_base_url
+        self.mayedit = mayedit
         Templated.__init__(self)
 
 class WikiPageRevisions(Templated):
@@ -90,8 +91,8 @@ class WikiEdit(WikiBase):
         WikiBase.__init__(self, content, **context)
 
 class WikiSettings(WikiBase):
-    def __init__(self, settings, **context):
-        content = WikiPageSettings(settings)
+    def __init__(self, settings, mayedit, **context):
+        content = WikiPageSettings(settings, mayedit)
         context['wikiaction'] = _("Settings for")
         WikiBase.__init__(self, content, **context)
 

@@ -1,3 +1,5 @@
+<%namespace file="printablebuttons.html" import="ynbutton" />
+
 <form method="post">
     ${_('Who can edit this page?')}<br/>
     <input type="radio" name="permlevel" id="permlevel0" value="0"
@@ -9,7 +11,7 @@
     %if thing.permlevel == 1:
         checked
     %endif
-    /><label for="permlevel1">${_('Only mods may edit')}</label><br/>
+    /><label for="permlevel1">${_('Only mods or those allowed may edit')}</label><br/>
     <input type="radio" name="permlevel" id="permlevel2" value="2"
     %if thing.permlevel == 2:
         checked
@@ -18,3 +20,19 @@
     <input type="submit" value="${_('Save Settings')}" />
     <input type="button" value="${_('Back to Page')}"  onclick="location.href='${thing.base_url}/${c.page}'" />
 </form>
+<h1>${_("Allow users to edit page")}</h1>
+<form id="WikiAllowEditor" data-baseurl="/r/${c.wiki_sr.name}/wiki" data-page="${c.page}">
+    <label for="username">${_("Username:")}&nbsp;</label>
+    <input id="username" name="username" type="text" />
+    &nbsp;
+    <input type="submit" value="${_('add')}" />
+    <h2 class="error" style="display:none" id="usereditallowerror">${_('Username does not exist or too many editors')}</h2>
+</form><br/>
+<ul>
+%for user in thing.mayedit:
+    <li>
+        ${user}
+        ${ynbutton(_("(Remove)"), _("Done"), "../r/%s/wiki/api/alloweditor/del/%s/%s" % (c.wiki_sr.name, user, c.page), callback="ReloadPage")}
+    </li>
+%endfor
+</ul>
