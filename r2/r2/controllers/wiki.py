@@ -1,4 +1,5 @@
 from pylons import request, g, c, Response
+from pylons.controllers.util import redirect_to
 from reddit_base import RedditController
 from r2.lib.utils import url_links
 from r2.models.wiki import WikiPage, WikiRevision
@@ -85,6 +86,9 @@ class WikiController(RedditController):
         builder = WikiRevisionBuilder(revisions, skip=not c.is_mod, wrap=default_thing_wrapper())
         listing = WikiRevisionListing(builder).listing()
         return WikiRecent(listing).render()
+    
+    def GET_wiki_redirect(self, page):
+        return redirect_to(str("%s/%s" % (c.wiki_base_url, page)), _code=301)
     
     @base_listing
     @validate(page = VWikiPage('page', restricted=True))

@@ -48,6 +48,8 @@ def make_map(global_conf={}, app_conf={}):
     mc('/wiki/*page', controller='wiki', action='wikiPage')
     mc('/wiki/', controller='wiki', action='wikiPage')
     
+    mc('/w/*page', controller='wiki', action='wiki_redirect')
+    
     mc('/login',    controller='forms', action='login')
     mc('/register',    controller='forms', action='register')
     mc('/logout',   controller='forms', action='logout')
