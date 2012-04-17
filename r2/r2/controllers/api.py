@@ -1184,10 +1184,7 @@ class ApiController(RedditController):
             form.find('#conflict_box').hide()
             form.set_html(".errors ul", '')
 
-        stylesheet_contents_parsed = parsed.cssText if parsed else ''
-        # if the css parsed, we're going to apply it (both preview & save)
-        jquery.apply_stylesheet(stylesheet_contents_parsed)
-        apply_css = True
+        stylesheet_contents_parsed = parsed if parsed else ''
         if op == 'save':
             c.site.stylesheet_contents      = stylesheet_contents_parsed
             
@@ -1206,13 +1203,11 @@ class ApiController(RedditController):
                 form.set_html(".status", _('conflict error'))
                 form.set_html(".errors ul", 'There was a conflict while editing the stylesheet')
                 form.find('#conflict_box').show()
-                form.set_inputs(conflict_old = e.r, stylesheet_contents = e.new)
+                form.set_inputs(conflict_old = e.your, stylesheet_contents = e.new)
                 form.set_html('#conflict_diff', e.htmldiff)
                 form.find('.errors').show()
-                apply_css = False
-        # if the css parsed, we're going to apply it (both preview & save)
-        if apply_css:
-            jquery.apply_stylesheet(parsed)
+                return
+        jquery.apply_stylesheet(parsed)
         if op == 'preview':
             # try to find a link to use, otherwise give up and
             # return
@@ -1512,7 +1507,7 @@ class ApiController(RedditController):
             form.has_errors("description", errors.CONFLICT)
             form.parent().set_html('.status', _("Description not saved"))
             form.find('#conflict_box').show()
-            form.set_inputs(conflict_old = e.r, description = e.new)
+            form.set_inputs(conflict_old = e.your, description = e.new)
             form.set_html('#conflict_diff', e.htmldiff)
             return
         
