@@ -8,6 +8,7 @@ from pylons.i18n import _
 class WikiView(Templated):
     def __init__(self, content, diff=None):
         self.page_content = wikimarkdown(content)
+        self.page_content_md = content
         self.diff = diff
         self.base_url = c.wiki_base_url
         Templated.__init__(self)

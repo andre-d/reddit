@@ -537,6 +537,26 @@ class TrafficJsonTemplate(JsonTemplate):
                              for date, data in getattr(thing, ival+"_data")]
         return ObjectTemplate(res)
 
+class WikiJsonTemplate(JsonTemplate):
+    def render(self, thing, *a, **kw):
+        try:
+            content = thing.content
+        except AttributeError:
+            content = thing.revisions
+        return ObjectTemplate(content.render() if thing else {})
+
+class WikiViewJsonTemplate(ThingJsonTemplate):
+    def render(self, thing, *a, **kw):
+        return ObjectTemplate({"content": thing.page_content_md})
+
+class WikiRevisionJsonTemplate(ThingJsonTemplate):
+    def render(self, thing, *a, **kw):
+        return ObjectTemplate({"author":thing._get('author'),
+                               "id": str(thing._id),
+                               "timestamp": str(thing.date),
+                               "reason": thing._get('reason'),
+                               "page": thing.page})
+
 class FlairListJsonTemplate(JsonTemplate):
     def render(self, thing, *a, **kw):
         def row_to_json(row):

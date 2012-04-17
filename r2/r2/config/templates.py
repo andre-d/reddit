@@ -54,6 +54,11 @@ api('organiclisting',       OrganicListingJsonTemplate)
 api('reddittraffic', TrafficJsonTemplate)
 api('takedownpane', TakedownJsonTemplate)
 
+api('wikibasepage', WikiJsonTemplate)
+api('wikipagerevisions', WikiJsonTemplate)
+api('wikiview', WikiViewJsonTemplate)
+api('wikirevision', WikiRevisionJsonTemplate)
+
 api('flairlist', FlairListJsonTemplate)
 api('flaircsv', FlairCsvJsonTemplate)
 
