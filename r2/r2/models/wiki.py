@@ -92,6 +92,10 @@ class WikiRevision(tdb_cassandra.UuidThing, Printable):
         WikiRevisionsRecentBySR.add_object(wr)
         return wr
     
+    def _on_commit(self):
+        WikiRevisionsByPage.add_object(self)
+        WikiRevisionsRecentBySR.add_object(self)
+    
     @classmethod
     def get_recent(cls, sr, count=100):
         return WikiRevisionsRecentBySR.query([sr], count=count)
@@ -196,7 +200,7 @@ class WikiPage(tdb_cassandra.Thing):
                 self._id = pageid   
         return tdb_cassandra.Thing._commit(self, *a, **kw)
 
-class WikiRevisionsByPage(tdb_cassandra.View):
+class WikiRevisionsByPage(tdb_cassandra.StorageView):
     """ Associate revisions with pages """
     
     _use_db = True
@@ -208,7 +212,7 @@ class WikiRevisionsByPage(tdb_cassandra.View):
     def _rowkey(cls, wr):
         return wr.pageid
 
-class WikiRevisionsRecentBySR(tdb_cassandra.View):
+class WikiRevisionsRecentBySR(tdb_cassandra.StorageView):
     """ Associate revisions with subreddits, store only recent """
     _use_db = True
     _connection_pool = 'main'
