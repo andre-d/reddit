@@ -170,12 +170,9 @@ class Account(Thing):
         return max(karma, 1) if karma > -1000 else karma
 
     def can_wiki(self):
-        if self.wiki_override is not None:
-            return self.wiki_override
-        else:
-            return (self.link_karma >= g.WIKI_KARMA and
-                    self.comment_karma >= g.WIKI_KARMA)
-
+        return self.wiki_override if self.wiki_override is False else True
+        
+    
     def jury_betatester(self):
         if g.cache.get("jury-killswitch"):
             return False

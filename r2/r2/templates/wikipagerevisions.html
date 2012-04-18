@@ -1,0 +1,5 @@
+${thing.revisions}
+%if c.page and thing.revisions.things:
+    <button onclick="WikiRevCompare('${c.page}', '${c.wiki_base_url}')">compare selected</button>
+%endif
+<br/>

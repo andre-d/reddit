@@ -553,6 +553,30 @@ class TrafficJsonTemplate(JsonTemplate):
 
         return ObjectTemplate(res)
 
+class WikiJsonTemplate(JsonTemplate):
+    def render(self, thing, *a, **kw):
+        try:
+            content = thing.content
+        except AttributeError:
+            content = thing.revisions
+        return ObjectTemplate(content.render() if thing else {})
+
+class WikiViewJsonTemplate(ThingJsonTemplate):
+    def render(self, thing, *a, **kw):
+        return ObjectTemplate({"content_md": thing.page_content_md,
+                               "content_html": thing.page_content,
+                               "revision_by": thing.edit_by,
+                               "revision_date": thing.edit_date,
+                               "may_revise": thing.may_revise})
+
+class WikiRevisionJsonTemplate(ThingJsonTemplate):
+    def render(self, thing, *a, **kw):
+        return ObjectTemplate({"author":thing._get('author'),
+                               "id": str(thing._id),
+                               "timestamp": str(thing.date),
+                               "reason": thing._get('reason'),
+                               "page": thing.page})
+
 class FlairListJsonTemplate(JsonTemplate):
     def render(self, thing, *a, **kw):
         def row_to_json(row):
@@ -605,6 +629,8 @@ class SubredditSettingsTemplate(ThingJsonTemplate):
                         title = 'site.title',
                         description = 'site.description',
                         public_description = 'site.public_description',
+                        prev_description_id = 'site.prev_description_id',
+                        prev_public_description_id = 'site.prev_public_description_id',
                         language = 'site.lang',
                         subreddit_type = 'site.type',
                         content_options = 'site.link_type',

@@ -56,7 +56,6 @@ class Globals(object):
             'MIN_RATE_LIMIT_COMMENT_KARMA',
             'VOTE_AGE_LIMIT',
             'REPLY_AGE_LIMIT',
-            'WIKI_KARMA',
             'HOT_PAGE_AGE',
             'MODWINDOW',
             'RATELIMIT',
@@ -79,6 +78,11 @@ class Globals(object):
             'sr_moderator_quota',
             'sr_contributor_quota',
             'sr_quota_time',
+            'wiki_keep_recent_days',
+            'wiki_max_page_length_bytes',
+            'wiki_edit_ratelimit_seconds',
+            'wiki_max_page_name_length',
+            'wiki_max_page_seperators',
         ],
 
         ConfigValue.float: [
@@ -108,7 +112,6 @@ class Globals(object):
             'amqp_logging',
             'read_only_mode',
             'frontpage_dart',
-            'allow_wiki_editing',
             'heavy_load_mode',
             's3_media_direct',
             'disable_captcha',

@@ -1,0 +1,8 @@
+<item>
+    <title>${thing._id}</title>
+    <author>${thing._get('author', 'Unknown')}</author>
+    <category>${thing.sr}/${thing.page}</category>
+    <description>${thing._get('reason')}</description>
+    <pubdate>${thing.date}</pubdate>
+    <guid>${thing._id}</guid>
+</item>

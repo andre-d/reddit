@@ -54,13 +54,7 @@ debug = g.debug
 make_lock = g.make_lock
 db_create_tables = g.db_create_tables
 
-# if cjson is installed, use it. it's faster.
-try:
-    import cjson as json
-except ImportError:
-    import json
-else:
-    json.dumps, json.loads = json.encode, json.decode
+import json
 
 thing_types = {}
 
@@ -1326,6 +1320,12 @@ class View(ThingBase):
 
         # can we be smarter here?
         thing_cache.delete(cls._cache_key_id(row_key))
+    
+    @classmethod
+    @will_write
+    def _remove(cls, key, columns):
+        cls._cf.remove(key, columns)
+        thing_cache.delete(cls._cache_key_id(key))
 
 class DenormalizedView(View):
     """Store the entire underlying object inside the View column."""

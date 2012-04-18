@@ -1,0 +1,20 @@
+<% from r2.models.wiki import WikiPage %>
+
+<%def name="listing(pages)">
+    %for k, v in pages.iteritems():
+        <ul>
+        <li>
+        %if v[0]:
+            <a href="/r/${v[0].sr}/wiki/${v[0].name}" target="_blank">${k}</a></li>
+        %else:
+            ${k}
+        </li>
+         %endif
+        ${listing(v[1])}
+        </ul>
+    %endfor
+</%def>
+
+<div class="pagelisting">
+${listing(thing.pages)}
+</div>

@@ -1,0 +1,23 @@
+<%namespace file="utils.html" import="timestamp"/>
+
+<div class="wikipage searchable">
+    %if thing.diff:
+        <p>
+            ${unsafe(thing.diff)}
+        </p>
+    %endif
+    <p>
+        %if not thing.page_content:
+            <em>${_("this page is empty")}</em>
+        %else:
+            ${unsafe(thing.page_content)}
+        %endif
+    </p>
+    %if thing.edit_date:
+            <br/>
+            <em>
+                ${_("revision by %s") % thing.edit_by}
+                &mdash;&nbsp;${timestamp(thing.edit_date)}&nbsp;ago
+            </em>
+        %endif
+</div>

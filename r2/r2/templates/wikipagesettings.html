@@ -1,0 +1,48 @@
+<%namespace file="printablebuttons.html" import="ynbutton" />
+<%namespace name="utils" file="utils.html"/>
+
+<div class="fancy-settings">
+    %if thing.show_settings:
+        <form id="pagesettings" method="post">
+            <%utils:line_field title=" ${_('who can edit this page?')}">
+                <input type="radio" name="permlevel" id="permlevel0" value="0"
+                    %if thing.permlevel == 0:
+                        checked
+                    %endif
+                /><label for="permlevel0">${_('anyone may edit')}</label><br/>
+                <input type="radio" name="permlevel" id="permlevel1" value="1"
+                %if thing.permlevel == 1:
+                    checked
+                %endif
+                /><label for="permlevel1">${_('only mods or those allowed may edit')}</label><br/>
+                <input type="radio" name="permlevel" id="permlevel2" value="2"
+                %if thing.permlevel == 2:
+                    checked
+                %endif
+                /><label for="permlevel2">${_('only mods may edit and view')}</label><br/>
+            </%utils:line_field>
+        </form>
+    %endif
+    %if thing.permlevel != 2:
+    <br/>
+    <%utils:line_field title="${_('allow users to edit page')}">
+        <form id="WikiAllowEditor" data-baseurl="/r/${c.site.name}/wiki" data-page="${c.page}">
+            <input id="username" name="username" maxlength="32" type="text" style="width: 430px;" />
+            <button type="submit" style="font-size: 100%;">${_('add')}</button>
+            <h3 class="error" style="display:none" id="usereditallowerror">${_('username does not exist')}</h2>
+        </form>
+        <br/>
+        <ul>
+        %for user in thing.mayedit:
+            <li>
+                ${user}
+                &mdash;&nbsp;
+                ${ynbutton(_("(remove)"), _("done"), "../r/%s/wiki/api/alloweditor/del/%s/%s" % (c.site.name, user, c.page), callback="ReloadPage")}
+            </li>
+        %endfor
+        </ul>
+    </%utils:line_field>
+    %endif
+
+    <input type="submit" onclick="$('#pagesettings').submit();" value="${_('save settings')}" />
+</div>

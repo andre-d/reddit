@@ -560,6 +560,10 @@ class FrontController(RedditController):
             pane = ModList(editable = is_moderator)
         elif is_moderator and location == 'banned':
             pane = BannedList(editable = is_moderator)
+        elif is_moderator and location == 'wikibanned':
+            pane = WikiBannedList(editable = is_moderator)
+        elif is_moderator and location == 'wikicontributors':
+            pane = WikiMayContributeList(editable = is_moderator)
         elif (location == 'contributors' and
               # On public reddits, only moderators can see the whitelist.
               # On private reddits, all contributors can see each other.
@@ -1164,7 +1168,7 @@ class FormsController(RedditController):
         returns their user name"""
         c.response_content_type = 'text/plain'
         if c.user_is_loggedin:
-            perm = str(g.allow_wiki_editing and c.user.can_wiki())
+            perm = str(c.user.can_wiki())
             c.response.content = c.user.name + "," + perm
         else:
             c.response.content = ''
