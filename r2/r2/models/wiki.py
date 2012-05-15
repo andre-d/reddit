@@ -4,6 +4,7 @@ from pycassa.system_manager import TIME_UUID_TYPE
 from pylons import c, g
 from pylons.controllers.util import abort
 from r2.models.printable import Printable
+from collections import OrderedDict
 
 # Used for the key/id for pages,
 #   must not be a character allowed in subreddit name
@@ -12,10 +13,27 @@ PAGE_ID_SEP = '\t'
 # Number of days to keep recent revisions for
 WIKI_RECENT_DAYS = 7
 
+# Max length of a single page in bytes
+MAX_PAGE_LENGTH_BYTES = 256*1024
+
+# Namespaces in which access is denied to do anything but view
+restricted_namespaces = ('reddit/', 'config/', 'special/')
+
+# Pages which may only be edited by mods, must be within restricted namespaces
+special_pages = ('config/stylesheet', 'config/sidebar')
+
+# Pages which have a special length restrictions (In bytes)
+special_length_restrictions_bytes = {'config/stylesheet': 128*1024, 'config/sidebar': 5120, 'config/description': 500}
+
 # Page "index" in the subreddit "reddit.com" and a seperator of "\t" becomes:
 #   "reddit.com\tindex"
 def wiki_id(sr, page):
     return '%s%s%s' % (sr, PAGE_ID_SEP, page)
+
+class ContentLengthError(Exception):
+    def __init__(self, max_length):
+        Exception.__init__(self)
+        self.max_length = max_length
 
 class WikiPageExists(Exception):
     pass
@@ -135,7 +153,9 @@ class WikiPage(tdb_cassandra.Thing):
     _read_consistency_level = tdb_cassandra.CL.QUORUM
     _write_consistency_level = tdb_cassandra.CL.QUORUM
     
-    _str_props = ('revision', 'name', 'content', 'sr', 'permlevel')
+    _date_props = ('last_edit_date')
+    _str_props = ('revision', 'name', 'last_edit_by', 'content', 'sr')
+    _int_props = ('permlevel')
     _bool_props = ('listed_')
     
     @classmethod
@@ -150,6 +170,22 @@ class WikiPage(tdb_cassandra.Thing):
         page = cls(**kw)
         page._commit()
         return page
+    
+    @property
+    def restricted(self):
+        return WikiPage.is_restricted(self.name)
+    
+    @classmethod
+    def is_restricted(cls, page):
+        return ("%s/" % page) in restricted_namespaces or page.startswith(restricted_namespaces)
+    
+    @classmethod
+    def is_special(cls, page):
+        return page in special_pages
+    
+    @property
+    def special(self):
+        return WikiPage.is_special(self.name)
     
     def add_to_listing(self):
         WikiPagesBySR.add_object(self)
@@ -185,8 +221,8 @@ class WikiPage(tdb_cassandra.Thing):
         """
             Create a tree of pages from their path.
         """
-        page_tree = {}
-        pages = cls.get_pages(sr)
+        page_tree = OrderedDict()
+        pages = sorted(cls.get_pages(sr), key=lambda page: page.name)
         for page in pages:
             p = page.name.split('/')
             cur_node = page_tree
@@ -221,6 +257,9 @@ class WikiPage(tdb_cassandra.Thing):
     def revise(self, content, previous = None, author=None, force=False, reason=None):
         if self.content == content:
             return
+        max_length = special_length_restrictions_bytes.get(self.name, MAX_PAGE_LENGTH_BYTES)
+        if len(content) > max_length:
+            raise ContentLengthError(max_length)
         try:
             revision = self.revision
         except:
@@ -234,14 +273,16 @@ class WikiPage(tdb_cassandra.Thing):
         
         wr = WikiRevision.create(self._id, content, author, reason)
         self.content = content
+        self.last_edit_by = author
+        self.last_edit_date = datetime.now()
         self.revision = wr._id
         self._commit()
         return wr
     
-    def change_permlevel(self, permlevel):
+    def change_permlevel(self, permlevel, force=False):
         if permlevel == self.permlevel:
             return
-        if int(permlevel) not in range(3):
+        if not force and int(permlevel) not in range(3):
             raise ValueError('Permlevel not valid')
         self.permlevel = permlevel
         self._commit()

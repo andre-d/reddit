@@ -493,7 +493,8 @@ class SearchBuilder(IDBuilder):
 class WikiRevisionBuilder(QueryBuilder):
     def keep_item(self, item):
         return not item.is_hidden
-    
+
+class WikiRecentRevisionBuilder(WikiRevisionBuilder):
     def must_skip(self, item):
         return (datetime.datetime.now(g.tz) - item.date).days >= WIKI_RECENT_DAYS
         

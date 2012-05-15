@@ -2,15 +2,17 @@ from r2.lib.pages.pages import Reddit
 from pylons import c
 from r2.lib.wrapped import Templated
 from r2.lib.menus import PageNameNav
-from r2.controllers.validator.wiki import may_revise, restricted_namespaces
+from r2.controllers.validator.wiki import may_revise
 from r2.lib.filters import wikimarkdown
 from pylons.i18n import _
 
 class WikiView(Templated):
-    def __init__(self, content, diff=None):
+    def __init__(self, content, edit_by, edit_date, diff=None):
         self.page_content = wikimarkdown(content)
         self.page_content_md = content
         self.diff = diff
+        self.edit_by = edit_by
+        self.edit_date = edit_date
         self.base_url = c.wiki_base_url
         Templated.__init__(self)
 
@@ -28,8 +30,9 @@ class WikiEditPage(Templated):
         Templated.__init__(self)
 
 class WikiPageSettings(Templated):
-    def __init__(self, settings, mayedit):
+    def __init__(self, settings, mayedit, show_settings=True, **context):
         self.permlevel = settings['permlevel']
+        self.show_settings = show_settings
         self.base_url = c.wiki_base_url
         self.mayedit = mayedit
         Templated.__init__(self)
@@ -67,7 +70,7 @@ class WikiBase(Reddit):
                 pageactions += [('edit', _("edit"), True)]
             pageactions += [('revisions/%s' % c.page, _("history"), False)]
             pageactions += [('discussions', _("talk"), True)]
-            if c.is_mod and not c.page.startswith(restricted_namespaces):
+            if c.is_mod:
                 pageactions += [('settings', _("settings"), True)]
         globalactions += [('index', _("Wiki Home"), False),
                           ('revisions', _("View Recent Revisions"), False),
@@ -86,7 +89,7 @@ class WikiPageView(WikiBase):
     def __init__(self, content, diff=None, **context):
         if not content and not context.get('alert') and may_revise(c.page_obj):
             context['alert'] = _("This page is empty, edit it to add some content.")
-        content = WikiView(content, diff=diff)
+        content = WikiView(content, context.get('edit_by', _("unknown")), context.get('edit_date', _("an unknown date")), diff=diff)
         WikiBase.__init__(self, content, **context)
 
 class WikiNotFound(WikiPageView):
@@ -105,7 +108,7 @@ class WikiEdit(WikiBase):
 
 class WikiSettings(WikiBase):
     def __init__(self, settings, mayedit, **context):
-        content = WikiPageSettings(settings, mayedit)
+        content = WikiPageSettings(settings, mayedit, **context)
         context['wikiaction'] = ('settings', _("settings"))
         WikiBase.__init__(self, content, **context)
 

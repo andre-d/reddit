@@ -6,5 +6,6 @@
     %endif
     <p>
         ${unsafe(thing.page_content)}
-    </p>
+    </p><br/>
+    <em>${_("Revision by %s on %s") % (thing.edit_by, thing.edit_date)}</em>
 </div>

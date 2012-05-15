@@ -1389,6 +1389,7 @@ class ApiController(RedditController):
                    link_type = VOneOf('link_type', ('any', 'link', 'self')),
                    wikimode = VOneOf('wikimode', ('disabled', 'modonly', 'anyone')),
                    wiki_edit_karma = VInt("wiki_edit_karma", coerce=False, min=0),
+                   wiki_edit_age = VInt("wiki_edit_age", coerce=False, min=0),
                    ip = ValidIP(),
                    sponsor_text =VLength('sponsorship-text', max_length = 500),
                    sponsor_name =VLength('sponsorship-name', max_length = 64),
@@ -1406,7 +1407,7 @@ class ApiController(RedditController):
                   if k in ('name', 'title', 'domain', 'description', 'prevdesc', 'over_18',
                            'show_media', 'show_cname_sidebar', 'type', 'link_type', 'lang',
                            'css_on_cname', 'header_title', 
-                           'wikimode', 'wiki_edit_karma',
+                           'wikimode', 'wiki_edit_karma', 'wiki_edit_age',
                            'allow_top', 'public_description'))
         
         description = kw['description']

@@ -1,20 +1,23 @@
 from validator import Validator
 from validator import validate
-from pylons import c, g
+from pylons import c, g, request
 from os.path import normpath
 from r2.lib.db import tdb_cassandra
-from r2.models.wiki import WikiPage, WikiRevision 
+from r2.models.wiki import WikiPage, WikiRevision
 from pylons.controllers.util import abort
-from pylons.i18n import _
-
-# Namespaces in which access is denied to do anything but view
-restricted_namespaces = ('reddit/', 'config/', 'special/')
-# Pages which may only be edited by mods, must be within restricted namespaces
-special_pages = ('config/stylesheet', 'config/sidebar')
+import datetime
+import simplejson
 
 MAX_PAGE_NAME_LENGTH = 128
 
-MAX_SEPERATORS = 2
+MAX_SEPERATORS = 3
+
+def jsonAbort(code, reason=None, **data):
+    data['code'] = code
+    data['reason'] = reason if reason else 'UNKNOWN_ERROR'
+    if c.extension == 'json':
+        request.environ['usable_error_content'] = simplejson.dumps(data)
+    abort(code)
 
 def may_revise(page=None):
     if c.is_mod:
@@ -23,34 +26,34 @@ def may_revise(page=None):
         return False
     if c.site.is_wikibanned(c.user):
         return False
+    if not may_view(page):
+        return False
+    if not c.user.can_wiki():
+        return False
+    if page and c.user.name in page.get_editors():
+        return True
     if not c.site.can_submit(c.user):
-        if page and c.user.name in page.get_editors():
-            return True
         return False
-    if c.user.can_wiki() is False:
+    if page.special:
         return False
-    if not c.is_mod and c.user.can_wiki() is not True:
-        if c.site.is_wikicontribute(c.user):
-            return True
-        if c.user.karma('link', c.site) < c.site.wiki_edit_karma:
-            return False
-    if c.site.wikimode == 'modonly' and not c.is_mod:
+    elif page and page.permlevel > 0:
         return False
-    if page:
-        level = int(page.permlevel)
-        if level == 0:
-            return True
-        if level == 1:
-            if c.user.name in page.get_editors():
-                return True
+    if c.site.is_wikicontribute(c.user):
+        return True
+    karma = max(c.user.karma('link', c.site), c.user.karma('comment', c.site))
+    if karma < c.site.wiki_edit_karma:
+        return False
+    age = (datetime.datetime.now(g.tz) - c.user._date).days
+    if age < c.site.wiki_edit_age:
         return False
     return True
-   
 
 def may_view(page):
-    if c.user_is_admin:
+    if not page:
         return True
-    level = int(page.permlevel)
+    if c.is_mod:
+        return True
+    level = page.permlevel
     if level < 2:
         return True
     if level == 2:
@@ -80,7 +83,7 @@ class VWikiPage(Validator):
         
         c.page = page
         if not c.is_mod and self.modonly:
-            abort(403)
+            jsonAbort(403, 'MOD_REQUIRED')
         wp = self.ValidPage(page)
         c.page_obj = wp
         return wp
@@ -88,22 +91,20 @@ class VWikiPage(Validator):
     def ValidPage(self, page):
         try:
             wp = WikiPage.get(c.wiki_id, page)
-            if c.user_is_admin:
-                return wp # Pages are always valid for admins
+            if self.restricted and wp.restricted:
+                if not wp.special:
+                    jsonAbort(403, 'RESTRICTED_PAGE')
             if not may_view(wp):
-                abort(403)
-            if self.restricted and ("%s/" % page in restricted_namespaces or page.startswith(restricted_namespaces)):
-                if not(c.is_mod and page in special_pages):
-                    abort(403)
+                jsonAbort(403, 'MAY_NOT_VIEW')
             return wp
         except tdb_cassandra.NotFound:
             if not c.user_is_loggedin:
-                abort(404)
+                jsonAbort(404, 'LOGIN_REQUIRED')
             if c.user_is_admin:
                 return # admins may always create
-            if page.startswith(restricted_namespaces):
-                if not(c.is_mod and page in special_pages):
-                    abort(403)
+            if WikiPage.is_restricted(page):
+                if not(c.is_mod and WikiPage.is_special(page)):
+                    jsonAbort(404, 'PAGE_NOT_FOUND', may_create=False)
     
     def ValidVersion(self, version, pageid=None):
         if not version:
@@ -111,26 +112,26 @@ class VWikiPage(Validator):
         try:
             r = WikiRevision.get(version, pageid)
             if r.is_hidden and not c.is_mod:
-                abort(403)
+                jsonAbort(403, 'HIDDEN_REVISION')
             return r
         except (tdb_cassandra.NotFound, ValueError):
-            abort(404)
+            jsonAbort(404, 'INVALID_REVISION')
 
 class VWikiPageAndVersion(VWikiPage):    
     def run(self, page, *versions):
         wp = VWikiPage.run(self, page)
         validated = []
         for v in versions:
-            validated += [self.ValidVersion(v, wp._id) if v else None]
+            validated += [self.ValidVersion(v, wp._id) if v and wp else None]
         return tuple([wp] + validated)
 
 class VWikiPageRevise(VWikiPage):
     def run(self, page, previous=None):
         wp = VWikiPage.run(self, page)
         if not wp:
-            abort(404)
+            jsonAbort(404, 'INVALID_PAGE')
         if not may_revise(wp):
-            abort(403)
+            jsonAbort(403, 'MAY_NOT_REVISE')
         if previous:
             prev = self.ValidVersion(previous, wp._id)
             return (wp, prev)
@@ -140,16 +141,16 @@ class VWikiPageCreate(Validator):
     def run(self, page):
         page = normalize_page(page)
         if page.count('/') > MAX_SEPERATORS:
-            c.error = _('A max of %d separators "/" are allowed in a wiki page name.') % MAX_SEPERATORS
+            c.error = {'reason': 'PAGE_NAME_MAX_SEPERATORS', 'max_seperators': MAX_SEPERATORS}
             return False
         try:
             if not len(page) > MAX_PAGE_NAME_LENGTH:
                 WikiPage.get(c.wiki_id, page)
             else:
-                c.error = _('This wiki cannot handle page names of that magnitude!  Please select a page name shorter than %d characters') % MAX_PAGE_NAME_LENGTH
+                c.error = {'reason': 'PAGE_NAME_LENGTH', 'max_length': MAX_PAGE_NAME_LENGTH}
             return False
         except tdb_cassandra.NotFound:
             if not may_revise():
-                abort(403)
+                jsonAbort(403, 'MAY_NOT_CREATE')
             else:
                 return True

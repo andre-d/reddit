@@ -2,32 +2,35 @@
 <%namespace name="utils" file="utils.html"/>
 
 <div class="fancy-settings">
-    <form method="post">
-        <%utils:line_field title=" ${_('Who can edit this page?')}">
-            <input type="radio" name="permlevel" id="permlevel0" value="0"
-                %if thing.permlevel == 0:
+    %if thing.show_settings:
+        <form method="post">
+            <%utils:line_field title=" ${_('Who can edit this page?')}">
+                <input type="radio" name="permlevel" id="permlevel0" value="0"
+                    %if thing.permlevel == 0:
+                        checked
+                    %endif
+                /><label for="permlevel0">${_('Anyone may edit')}</label><br/>
+                <input type="radio" name="permlevel" id="permlevel1" value="1"
+                %if thing.permlevel == 1:
                     checked
                 %endif
-            /><label for="permlevel0">${_('Anyone may edit')}</label><br/>
-            <input type="radio" name="permlevel" id="permlevel1" value="1"
-            %if thing.permlevel == 1:
-                checked
-            %endif
-            /><label for="permlevel1">${_('Only mods or those allowed may edit')}</label><br/>
-            <input type="radio" name="permlevel" id="permlevel2" value="2"
-            %if thing.permlevel == 2:
-                checked
-            %endif
-            /><label for="permlevel2">${_('Only mods may edit and view')}</label><br/>
-        </%utils:line_field>
-        <input type="submit" value="${_('save settings')}" />
-    </form>
+                /><label for="permlevel1">${_('Only mods or those allowed may edit')}</label><br/>
+                <input type="radio" name="permlevel" id="permlevel2" value="2"
+                %if thing.permlevel == 2:
+                    checked
+                %endif
+                /><label for="permlevel2">${_('Only mods may edit and view')}</label><br/>
+            </%utils:line_field>
+            <input type="submit" value="${_('save settings')}" />
+        </form>
+    %endif
+    %if thing.permlevel != 2:
     <br/>
     <%utils:line_field title="${_('Allow users to edit page')}">
         <form id="WikiAllowEditor" data-baseurl="/r/${c.site.name}/wiki" data-page="${c.page}">
             <input id="username" name="username" maxlength="32" type="text" style="width: 430px;" />
             <button type="submit" style="font-size: 100%;">${_('add')}</button>
-            <h2 class="error" style="display:none" id="usereditallowerror">${_('Username does not exist or too many editors')}</h2>
+            <h3 class="error" style="display:none" id="usereditallowerror">${_('Username does not exist')}</h2>
         </form>
         <br/>
         <ul>
@@ -40,4 +43,5 @@
         %endfor
         </ul>
     </%utils:line_field>
+    %endif
 </div>
