@@ -38,7 +38,7 @@ def may_revise(page=None):
         return False
     elif page and page.permlevel > 0:
         return False
-    if c.site.is_wikicontribute(c.user):
+    if c.site.is_wikicontributor(c.user):
         return True
     karma = max(c.user.karma('link', c.site), c.user.karma('comment', c.site))
     if karma < c.site.wiki_edit_karma:

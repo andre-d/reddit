@@ -135,7 +135,7 @@ menu =   MenuHandler(hot          = _('hot'),
                      modqueue     = _("moderation queue"),
                      
                      wikibanned        = _("ban wiki contributors"),
-                     wikicontribute  = _("add wiki contributors"),
+                     wikicontributors  = _("add wiki contributors"),
 
                      popular      = _("popular"),
                      create       = _("create"),

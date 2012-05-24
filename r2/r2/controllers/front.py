@@ -549,7 +549,7 @@ class FrontController(RedditController):
             pane = BannedList(editable = is_moderator)
         elif is_moderator and location == 'wikibanned':
             pane = WikiBannedList(editable = is_moderator)
-        elif is_moderator and location == 'wikicontribute':
+        elif is_moderator and location == 'wikicontributors':
             pane = WikiMayContributeList(editable = is_moderator)
         elif (location == 'contributors' and
               # On public reddits, only moderators can see the whitelist.

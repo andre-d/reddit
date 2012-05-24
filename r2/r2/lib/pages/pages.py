@@ -224,7 +224,7 @@ class Reddit(Templated):
             buttons += [NamedButton("banned", css_class="reddit-ban"),
                         NamedButton("flair", css_class="reddit-flair"),
                         NamedButton('wikibanned', css_class = 'reddit-ban'),
-                        NamedButton('wikicontribute', css_class = 'reddit-contributors')]
+                        NamedButton('wikicontributors', css_class = 'reddit-contributors')]
 
         buttons.append(NamedButton("log", css_class="reddit-moderationlog"))
 
@@ -2903,7 +2903,7 @@ class WikiBannedList(BannedList):
 
 class WikiMayContributeList(UserList):
     """List of users allowed to contribute to a given wiki"""
-    type = 'wikicontribute'
+    type = 'wikicontributor'
 
     @property
     def form_title(self):
@@ -2914,7 +2914,7 @@ class WikiMayContributeList(UserList):
         return _('wiki page contributors')
 
     def user_ids(self):
-        return c.site.wikicontribute
+        return c.site.wikicontributor
 
 class TrafficViewerList(UserList):
     """Traffic share list on /traffic/*"""
