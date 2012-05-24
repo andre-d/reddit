@@ -168,7 +168,7 @@ class Account(Thing):
         return max(karma, 1) if karma > -1000 else karma
 
     def can_wiki(self):
-        return self.wiki_override if self.wiki_override is not None else False
+        return self.wiki_override if self.wiki_override is False else True
         
     
     def jury_betatester(self):

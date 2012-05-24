@@ -1,3 +1,4 @@
+from datetime import datetime
 from r2.lib.db import tdb_cassandra
 from r2.lib.merge import *
 from pycassa.system_manager import TIME_UUID_TYPE
@@ -273,8 +274,8 @@ class WikiPage(tdb_cassandra.Thing):
         
         wr = WikiRevision.create(self._id, content, author, reason)
         self.content = content
-        self.last_edit_by = author
-        self.last_edit_date = datetime.now()
+        self.edit_by = author
+        self.edit_date = wr.date
         self.revision = wr._id
         self._commit()
         return wr

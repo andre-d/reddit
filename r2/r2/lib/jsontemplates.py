@@ -560,7 +560,11 @@ class WikiJsonTemplate(JsonTemplate):
 
 class WikiViewJsonTemplate(ThingJsonTemplate):
     def render(self, thing, *a, **kw):
-        return ObjectTemplate({"content": thing.page_content_md})
+        return ObjectTemplate({"content_md": thing.page_content_md,
+                               "content_html": thing.page_content,
+                               "revision_by": thing.edit_by,
+                               "revision_date": thing.edit_date,
+                               "may_revise": thing.may_revise})
 
 class WikiRevisionJsonTemplate(ThingJsonTemplate):
     def render(self, thing, *a, **kw):

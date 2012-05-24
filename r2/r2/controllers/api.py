@@ -59,6 +59,7 @@ from r2.lib.scraper import str_to_image
 from r2.controllers.api_docs import api_doc, api_section
 
 from r2.models.wiki import WikiPage
+from r2.controllers.wiki import wiki_modactions
 from r2.lib.merge import ConflictException
 
 import csv
@@ -476,7 +477,7 @@ class ApiController(RedditController):
                 iuser = VByName('id'),
                 container = nop('container'),
                 type = VOneOf('type', ('friend', 'enemy', 'moderator',
-                                       'wikicontributor', 'banned'
+                                       'wikicontributor', 'banned',
                                        'wikibanned', 'contributor')))
     @api_doc(api_section.users)
     def POST_unfriend(self, nuser, iuser, container, type):
@@ -1188,11 +1189,6 @@ class ApiController(RedditController):
             c.site.stylesheet_contents      = stylesheet_contents_parsed
             
             try:
-                wiki = WikiPage.get(c.site.name, 'config/stylesheet')
-            except tdb_cassandra.NotFound:
-                wiki = WikiPage.create(c.site.name, 'config/stylesheet')
-            
-            try:
                 c.site.change_css(stylesheet_contents, parsed, prevstyle)
                 form.find('.conflict_box').hide()
                 form.find('.errors').hide()
@@ -1502,7 +1498,8 @@ class ApiController(RedditController):
         except tdb_cassandra.NotFound:
             wiki = WikiPage.create(sr.name, 'config/sidebar')
         try:
-            wiki.revise(description, previous=prevdesc, author=c.user.name)
+            if wiki.revise(description, previous=prevdesc, author=c.user.name):
+                ModAction.create(c.site, c.user, 'wikirevise', description=wiki_modactions['config/sidebar'])
         except ConflictException as e:
             c.errors.add(errors.CONFLICT, field = "description")
             form.has_errors("description", errors.CONFLICT)

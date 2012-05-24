@@ -1,3 +1,5 @@
+<%namespace file="utils.html" import="timestamp"/>
+
 <div class="wikipage searchable">
     %if thing.diff:
         <p>
@@ -7,5 +9,12 @@
     <p>
         ${unsafe(thing.page_content)}
     </p><br/>
-    <em>${_("Revision by %s on %s") % (thing.edit_by, thing.edit_date)}</em>
+    <em>
+        %if thing.edit_by:
+            ${_("Revision by %s") % thing.edit_by}
+        %endif
+        %if thing.edit_date:
+            &mdash;&nbsp;${timestamp(thing.edit_date)}&nbsp;ago
+        %endif
+    </em>
 </div>

@@ -327,7 +327,7 @@ class Subreddit(Thing, Printable):
         self.stylesheet_hash = md5(parsed).hexdigest()
         set_last_modified(self, 'stylesheet_contents')
         c.site._commit()
-        ModAction.create(self, c.user, action='editsettings', details='stylesheet')
+        ModAction.create(self, c.user, action='wikirevise', details='stylesheet')
 
     def is_special(self, user):
         return (user

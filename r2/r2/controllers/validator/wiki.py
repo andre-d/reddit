@@ -22,6 +22,8 @@ def jsonAbort(code, reason=None, **data):
 def may_revise(page=None):
     if c.is_mod:
         return True
+    if page and page.restricted and not page.special:
+            return False
     if not c.user_is_loggedin:
         return False
     if c.site.is_wikibanned(c.user):
@@ -34,7 +36,7 @@ def may_revise(page=None):
         return True
     if not c.site.can_submit(c.user):
         return False
-    if page.special:
+    if page and page.special:
         return False
     elif page and page.permlevel > 0:
         return False
@@ -52,6 +54,8 @@ def may_view(page):
     if not page:
         return True
     if c.is_mod:
+        return True
+    if page.special:
         return True
     level = page.permlevel
     if level < 2:

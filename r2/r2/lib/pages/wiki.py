@@ -14,6 +14,7 @@ class WikiView(Templated):
         self.edit_by = edit_by
         self.edit_date = edit_date
         self.base_url = c.wiki_base_url
+        self.may_revise = may_revise(c.page_obj)
         Templated.__init__(self)
 
 class WikiPageListing(Templated):
@@ -89,7 +90,7 @@ class WikiPageView(WikiBase):
     def __init__(self, content, diff=None, **context):
         if not content and not context.get('alert') and may_revise(c.page_obj):
             context['alert'] = _("This page is empty, edit it to add some content.")
-        content = WikiView(content, context.get('edit_by', _("unknown")), context.get('edit_date', _("an unknown date")), diff=diff)
+        content = WikiView(content, context.get('edit_by'), context.get('edit_date'), diff=diff)
         WikiBase.__init__(self, content, **context)
 
 class WikiNotFound(WikiPageView):

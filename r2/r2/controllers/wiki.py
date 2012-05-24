@@ -26,6 +26,8 @@ from r2.lib.utils import timesince
 page_descriptions = {'config/stylesheet':_("This page is the subreddit stylesheet, changes here apply to the subreddit css"),
                      'config/sidebar':_("The contents of this page appear on the subreddit sidebar")}
 
+wiki_modactions = {'config/sidebar':_("Updated subreddit sidebar")}
+
 class WikiController(RedditController):
     @validate(pv = VWikiPageAndVersion(('page', 'v', 'v2'), restricted=False))
     def GET_wikiPage(self, pv):
@@ -193,9 +195,9 @@ class WikiApiController(WikiController):
                     page.revise(request.POST['content'], previous, c.user.name, reason=request.POST['reason'])
                 except ContentLengthError as e:
                     self.handle_error(403, 'CONTENT_LENGTH_ERROR', max_length = e.max_length)
-            
-                if c.is_mod:
-                    description = 'Page %s edited' % page.name
+                
+                if page.special or c.is_mod:
+                    description = wiki_modactions.get(page.name, 'Page %s edited' % page.name)
                     ModAction.create(c.site, c.user, 'wikirevise', description=description)
         except ConflictException as e:
             self.handle_error(409, 'EDIT_CONFLICT', newcontent=e.new, newrevision=page.revision, diffcontent=e.htmldiff)
