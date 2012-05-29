@@ -72,6 +72,11 @@
     %else:
      ${UserText(None, text="", creating=True, name="public_description", have_form=False)}
     %endif
+    <div id="public_description_conflict_box" style="display: none">
+        <div id="public_description_conflict_diff"></div>
+        ${UserText(None, text ="", editable = True, creating = True, name="public_description_conflict_old", have_form = False)}
+    </div>
+    ${error_field("CONFLICT", "public_description")}
   </%utils:line_field>
 
   <%utils:line_field title="${_('sidebar')}" css_class="usertext"
@@ -81,15 +86,16 @@
     %else:
      ${UserText(None, text = "", creating = True, name="description", have_form = False)}
     %endif
-    <div id="conflict_box" style="display: none">
-        <div id="conflict_diff"></div>
-        ${UserText(None, text ="", editable = True, creating = True, name="conflict_old", have_form = False)}
+    <div id="description_conflict_box" style="display: none">
+        <div id="description_conflict_diff"></div>
+        ${UserText(None, text ="", editable = True, creating = True, name="description_conflict_old", have_form = False)}
     </div>
     ${error_field("CONFLICT", "description")}
   </%utils:line_field>
   
   
   %if thing.site:
+        <input type="hidden" name="prevpubdesc" value="${thing.site.prevpubdesc}"/>
         <input type="hidden" name="prevdesc" value="${thing.site.prevdesc}"/>
   %endif
 

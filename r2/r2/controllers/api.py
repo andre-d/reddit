@@ -1362,7 +1362,6 @@ class ApiController(RedditController):
             return UploadedImage(_('saved'), new_url, name, 
                                  errors=errors, form_id=form_id).render()
 
-
     @validatedForm(VUser(),
                    VModhash(),
                    VRatelimit(rate_user = True,
@@ -1374,6 +1373,7 @@ class ApiController(RedditController):
                    header_title = VLength("header-title", max_length = 500),
                    domain = VCnameDomain("domain"),
                    public_description = VMarkdown("public_description", max_length = 500),
+                   prevpubdesc = VLength('prevpubdesc', max_length = 256),
                    description = VMarkdown("description", max_length = 5120),
                    prevdesc = VLength('prevdesc', max_length = 256),
                    lang = VLang("lang"),
@@ -1395,21 +1395,42 @@ class ApiController(RedditController):
     @api_doc(api_section.subreddits)
     def POST_site_admin(self, form, jquery, name, ip, sr,
                         sponsor_text, sponsor_url, sponsor_name, **kw):
+        
+        def apply_wikid_field(sr, form, pagename, value, prev, field, error):
+            try:
+                wiki = WikiPage.get(sr.name, pagename)
+            except tdb_cassandra.NotFound:
+                wiki = WikiPage.create(sr.name, pagename)
+            try:
+                if wiki.revise(value, previous=prev, author=c.user.name):
+                    ModAction.create(c.site, c.user, 'wikirevise', description=wiki_modactions.get(pagename))
+                return True
+            except ConflictException as e:
+                c.errors.add(errors.CONFLICT, field = field)
+                form.has_errors(field, errors.CONFLICT)
+                form.parent().set_html('.status', error)
+                form.find('#%s_conflict_box' % field).show()
+                form.set_inputs(**{'%s_conflict_old' % field: e.your, field: e.new})
+                form.set_html('#%s_conflict_diff' % field, e.htmldiff)
+            return False
+        
         # the status button is outside the form -- have to reset by hand
         form.parent().set_html('.status', "")
 
         redir = False
         kw = dict((k, v) for k, v in kw.iteritems()
-                  if k in ('name', 'title', 'domain', 'description', 'prevdesc', 'over_18',
+                  if k in ('name', 'title', 'domain', 'description', 'prevdesc', 'prevpubdesc',
                            'show_media', 'show_cname_sidebar', 'type', 'link_type', 'lang',
-                           'css_on_cname', 'header_title', 
+                           'css_on_cname', 'header_title', 'over_18',
                            'wikimode', 'wiki_edit_karma', 'wiki_edit_age',
                            'allow_top', 'public_description'))
         
-        description = kw['description']
-        prevdesc = kw['prevdesc']
-        del kw['description']
-        del kw['prevdesc']
+        description = kw.pop('description')
+        prevdesc = kw.pop('prevdesc')
+        
+        public_description = kw.pop('public_description')
+        prevpubdesc = kw.pop('prevpubdesc')
+        
         
         #if a user is banned, return rate-limit errors
         if c.user._spam:
@@ -1493,20 +1514,9 @@ class ApiController(RedditController):
         if form.has_error():
             return
         
-        try:
-            wiki = WikiPage.get(sr.name, 'config/sidebar')
-        except tdb_cassandra.NotFound:
-            wiki = WikiPage.create(sr.name, 'config/sidebar')
-        try:
-            if wiki.revise(description, previous=prevdesc, author=c.user.name):
-                ModAction.create(c.site, c.user, 'wikirevise', description=wiki_modactions['config/sidebar'])
-        except ConflictException as e:
-            c.errors.add(errors.CONFLICT, field = "description")
-            form.has_errors("description", errors.CONFLICT)
-            form.parent().set_html('.status', _("Description not saved"))
-            form.find('#conflict_box').show()
-            form.set_inputs(conflict_old = e.your, description = e.new)
-            form.set_html('#conflict_diff', e.htmldiff)
+        if not apply_wikid_field(sr, form, 'config/sidebar', description, prevdesc, 'description', _("Sidebar was not saved")):
+            return
+        if not apply_wikid_field(sr, form, 'config/description', public_description, prevpubdesc, 'public_description', _("Description was not saved")):
             return
         
         if redir:

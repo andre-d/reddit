@@ -61,7 +61,6 @@ class Subreddit(Thing, Printable):
                      header_size = None,
                      header_title = "",
                      allow_top = False, # overridden in "_new"
-                     public_description = '',
                      images = {},
                      reported = 0,
                      valid_votes = 0,
@@ -225,9 +224,23 @@ class Subreddit(Thing, Printable):
             return self._t.get('description')
     
     @property
+    def public_description(self):
+        try:
+            return WikiPage.get(self.name, 'config/description')._get('content','')
+        except tdb_cassandra.NotFound:
+            return self._t.get('public_description')
+    
+    @property
     def prevdesc(self):
         try:
             return WikiPage.get(self.name, 'config/sidebar')._get('revision','')
+        except tdb_cassandra.NotFound:
+            return ''
+    
+    @property
+    def prevpubdesc(self):
+        try:
+            return WikiPage.get(self.name, 'config/description')._get('revision','')
         except tdb_cassandra.NotFound:
             return ''
     
