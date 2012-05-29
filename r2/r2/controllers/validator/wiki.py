@@ -144,6 +144,9 @@ class VWikiPageRevise(VWikiPage):
 class VWikiPageCreate(Validator):
     def run(self, page):
         page = normalize_page(page)
+        if c.is_mod and WikiPage.is_special(page):
+            c.error = {'reason': 'PAGE_CREATED_ELSEWHERE'}
+            return False
         if page.count('/') > MAX_SEPERATORS:
             c.error = {'reason': 'PAGE_NAME_MAX_SEPERATORS', 'max_seperators': MAX_SEPERATORS}
             return False
