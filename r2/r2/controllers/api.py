@@ -1373,9 +1373,9 @@ class ApiController(RedditController):
                    header_title = VLength("header-title", max_length = 500),
                    domain = VCnameDomain("domain"),
                    public_description = VMarkdown("public_description", max_length = 500),
-                   prevpubdesc = VLength('prevpubdesc', max_length = 256),
+                   prev_public_description_id = VLength('prev_public_description_id', max_length = 36),
                    description = VMarkdown("description", max_length = 5120),
-                   prevdesc = VLength('prevdesc', max_length = 256),
+                   prev_description_id = VLength('prev_description_id', max_length = 36),
                    lang = VLang("lang"),
                    over_18 = VBoolean('over_18'),
                    allow_top = VBoolean('allow_top'),
@@ -1419,17 +1419,18 @@ class ApiController(RedditController):
 
         redir = False
         kw = dict((k, v) for k, v in kw.iteritems()
-                  if k in ('name', 'title', 'domain', 'description', 'prevdesc', 'prevpubdesc',
+                  if k in ('name', 'title', 'domain', 'description',
+                           'prev_description_id', 'prev_public_description_id',
                            'show_media', 'show_cname_sidebar', 'type', 'link_type', 'lang',
                            'css_on_cname', 'header_title', 'over_18',
                            'wikimode', 'wiki_edit_karma', 'wiki_edit_age',
                            'allow_top', 'public_description'))
         
         description = kw.pop('description')
-        prevdesc = kw.pop('prevdesc')
+        prev_desc = kw.pop('prev_description_id')
         
         public_description = kw.pop('public_description')
-        prevpubdesc = kw.pop('prevpubdesc')
+        prev_pubdesc = kw.pop('prev_public_description_id')
         
         
         #if a user is banned, return rate-limit errors
@@ -1514,9 +1515,9 @@ class ApiController(RedditController):
         if form.has_error():
             return
         
-        if not apply_wikid_field(sr, form, 'config/sidebar', description, prevdesc, 'description', _("Sidebar was not saved")):
+        if not apply_wikid_field(sr, form, 'config/sidebar', description, prev_desc, 'description', _("Sidebar was not saved")):
             return
-        if not apply_wikid_field(sr, form, 'config/description', public_description, prevpubdesc, 'public_description', _("Description was not saved")):
+        if not apply_wikid_field(sr, form, 'config/description', public_description, prev_pubdesc, 'public_description', _("Description was not saved")):
             return
         
         if redir:

@@ -231,14 +231,14 @@ class Subreddit(Thing, Printable):
             return self._t.get('public_description')
     
     @property
-    def prevdesc(self):
+    def prev_description_id(self):
         try:
             return WikiPage.get(self.name, 'config/sidebar')._get('revision','')
         except tdb_cassandra.NotFound:
             return ''
     
     @property
-    def prevpubdesc(self):
+    def prev_public_description_id(self):
         try:
             return WikiPage.get(self.name, 'config/description')._get('revision','')
         except tdb_cassandra.NotFound:
