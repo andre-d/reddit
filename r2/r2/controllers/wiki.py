@@ -10,23 +10,28 @@ from r2.models.builder import WikiRevisionBuilder, WikiRecentRevisionBuilder
 from r2.config.extensions import set_extension
 from r2.lib.template_helpers import add_sr
 from r2.lib.db import tdb_cassandra
+from r2.controllers.errors import errors
 from r2.models.listing import WikiRevisionListing
-from r2.lib.merge import *
 from r2.lib.pages.things import default_thing_wrapper
 from r2.lib.pages import BoringPage
-from r2.lib.pages.wiki import *
 from reddit_base import base_listing
 from r2.models import IDBuilder, LinkListing, DefaultSR
-from validator.wiki import *
-from validator.validator import VInt, VExistingUname
+from validator.validator import VInt, VExistingUname, VRatelimit
 from pylons.i18n import _
 from r2.lib.pages import PaneStack
 from r2.lib.utils import timesince
 
+# TODO: No import *
+from r2.lib.merge import *
+from validator.wiki import *
+from r2.lib.pages.wiki import *
+
 page_descriptions = {'config/stylesheet':_("This page is the subreddit stylesheet, changes here apply to the subreddit css"),
                      'config/sidebar':_("The contents of this page appear on the subreddit sidebar")}
 
-wiki_modactions = {'config/sidebar':_("Updated subreddit sidebar")}
+wiki_modactions = {'config/sidebar':"Updated subreddit sidebar"}
+
+WIKI_EDIT_RATELIMIT_SECONDS = g.wiki_edit_ratelimit_seconds
 
 class WikiController(RedditController):
     @validate(pv = VWikiPageAndVersion(('page', 'v', 'v2'), restricted=False))
@@ -181,13 +186,18 @@ class WikiController(RedditController):
                 c.wikidisabled = True
 
 class WikiApiController(WikiController):
-    @validate(pageandprevious = VWikiPageRevise(('page', 'previous'), restricted=True))
+    @validate(VRatelimit(rate_user = True, rate_ip = True, prefix = "rate_wiki_"),
+              pageandprevious = VWikiPageRevise(('page', 'previous'), restricted=True))
     def POST_wikiEdit(self, pageandprevious):
+        if (errors.RATELIMIT, 'ratelimit') in c.errors:
+            self.handle_error(429, 'WIKI_EDIT_RATELIMIT')
         page, previous = pageandprevious
         previous = previous._id if previous else None
         try:
             if page.name == 'config/stylesheet':
-                report, parsed = c.site.parse_css(request.POST['content'])
+                report, parsed = c.site.parse_css(request.POST['content'], verify=False)
+                if report is None: # g.css_killswitch
+                    self.handle_error(403, 'STYLESHEET_EDIT_DENIED')
                 if report.errors:
                     error_items = [x.message for x in sorted(report.errors)]
                     self.handle_error(415, 'SPECIAL_ERRORS', special_errors=error_items)
@@ -197,12 +207,13 @@ class WikiApiController(WikiController):
                     page.revise(request.POST['content'], previous, c.user.name, reason=request.POST['reason'])
                 except ContentLengthError as e:
                     self.handle_error(403, 'CONTENT_LENGTH_ERROR', max_length = e.max_length)
-                
                 if page.special or c.is_mod:
                     description = wiki_modactions.get(page.name, 'Page %s edited' % page.name)
-                    ModAction.create(c.site, c.user, 'wikirevise', description=description)
+                    ModAction.create(c.site, c.user, 'wikirevise', details=description)
         except ConflictException as e:
             self.handle_error(409, 'EDIT_CONFLICT', newcontent=e.new, newrevision=page.revision, diffcontent=e.htmldiff)
+        if not c.is_mod:
+            VRatelimit.ratelimit(rate_user = True, rate_ip = True, prefix = "rate_wiki_", seconds=WIKI_EDIT_RATELIMIT_SECONDS)
         return simplejson.dumps({})
     
     @validate(page = VWikiPage('page'), user = VExistingUname('user'))

@@ -12,10 +12,10 @@ from collections import OrderedDict
 PAGE_ID_SEP = '\t'
 
 # Number of days to keep recent revisions for
-WIKI_RECENT_DAYS = 7
+WIKI_RECENT_DAYS = g.wiki_keep_recent_days
 
 # Max length of a single page in bytes
-MAX_PAGE_LENGTH_BYTES = 256*1024
+MAX_PAGE_LENGTH_BYTES = g.wiki_max_page_length_bytes
 
 # Namespaces in which access is denied to do anything but view
 restricted_namespaces = ('reddit/', 'config/', 'special/')

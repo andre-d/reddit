@@ -8,9 +8,9 @@ from pylons.controllers.util import abort
 import datetime
 import simplejson
 
-MAX_PAGE_NAME_LENGTH = 128
+MAX_PAGE_NAME_LENGTH = g.wiki_max_page_name_length
 
-MAX_SEPERATORS = 3
+MAX_SEPERATORS = g.wiki_max_page_seperators
 
 def jsonAbort(code, reason=None, **data):
     data['code'] = code

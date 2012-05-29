@@ -1186,14 +1186,14 @@ class ApiController(RedditController):
 
         stylesheet_contents_parsed = parsed if parsed else ''
         if op == 'save':
-            c.site.stylesheet_contents      = stylesheet_contents_parsed
-            
+            c.site.stylesheet_contents = stylesheet_contents_parsed
             try:
                 c.site.change_css(stylesheet_contents, parsed, prevstyle)
                 form.find('.conflict_box').hide()
                 form.find('.errors').hide()
                 form.set_html(".status", _('saved'))
                 form.set_html(".errors ul", "")
+                ModAction.create(c.site, c.user, 'wikirevise', description=wiki_modactions.get('config/stylesheet'))
             except ConflictException as e:
                 form.set_html(".status", _('conflict error'))
                 form.set_html(".errors ul", 'There was a conflict while editing the stylesheet')
@@ -1403,7 +1403,7 @@ class ApiController(RedditController):
                 wiki = WikiPage.create(sr.name, pagename)
             try:
                 if wiki.revise(value, previous=prev, author=c.user.name):
-                    ModAction.create(c.site, c.user, 'wikirevise', description=wiki_modactions.get(pagename))
+                    ModAction.create(c.site, c.user, 'wikirevise', details=wiki_modactions.get(pagename))
                 return True
             except ConflictException as e:
                 c.errors.add(errors.CONFLICT, field = field)

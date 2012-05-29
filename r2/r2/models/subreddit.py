@@ -317,9 +317,9 @@ class Subreddit(Thing, Printable):
         else:
             return False
     
-    def parse_css(self, content):
+    def parse_css(self, content, verify=True):
         from r2.lib import cssfilter
-        if g.css_killswitch or not self.can_change_stylesheet(c.user):
+        if g.css_killswitch or (verify and not self.can_change_stylesheet(c.user)):
             return (None, None)
     
         parsed, report = cssfilter.validate_css(content)
@@ -340,7 +340,7 @@ class Subreddit(Thing, Printable):
         self.stylesheet_hash = md5(parsed).hexdigest()
         set_last_modified(self, 'stylesheet_contents')
         c.site._commit()
-        ModAction.create(self, c.user, action='wikirevise', details='stylesheet')
+        ModAction.create(self, c.user, action='wikirevise', details='Updated subreddit stylesheet')
 
     def is_special(self, user):
         return (user

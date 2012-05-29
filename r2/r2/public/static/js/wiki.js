@@ -57,6 +57,13 @@ $(function() {
                         specials.append(errors[i]+"<br/>")
                     }
                     special.fadeIn("slow")
+                },
+                429: function(xhr) {
+                    specials.empty()
+                    for(i in errors) {
+                        specials.text("You are doing that too much, please try again in X seconds.")
+                    }
+                    special.fadeIn("slow")
                 }
             }
         })
