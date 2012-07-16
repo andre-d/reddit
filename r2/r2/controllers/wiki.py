@@ -168,7 +168,7 @@ class WikiController(RedditController):
         except ValueError:
             self.handle_error(403, 'INVALID_PERMLEVEL')
         description = 'Page: %s, Changed from %s to %s' % (page.name, oldpermlevel, permlevel)
-        ModAction.create(c.site, c.user, 'wikipermlevel', description=description)
+       # ModAction.create(c.site, c.user, 'wikipermlevel', description=description)
         return self.GET_wikiSettings(page=page.name)
     
     def handle_error(self, code, error=None, **kw):
@@ -217,7 +217,7 @@ class WikiApiController(WikiController):
                     self.handle_error(403, 'CONTENT_LENGTH_ERROR', max_length = e.max_length)
                 if page.special or c.is_mod:
                     description = wiki_modactions.get(page.name, 'Page %s edited' % page.name)
-                    ModAction.create(c.site, c.user, 'wikirevise', details=description)
+                 #   ModAction.create(c.site, c.user, 'wikirevise', details=description)
         except ConflictException as e:
             self.handle_error(409, 'EDIT_CONFLICT', newcontent=e.new, newrevision=page.revision, diffcontent=e.htmldiff)
         if not c.is_mod:

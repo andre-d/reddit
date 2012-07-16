@@ -1220,7 +1220,7 @@ class ApiController(RedditController):
                 form.find('.errors').hide()
                 form.set_html(".status", _('saved'))
                 form.set_html(".errors ul", "")
-                ModAction.create(c.site, c.user, 'wikirevise', description=wiki_modactions.get('config/stylesheet'))
+              #  ModAction.create(c.site, c.user, 'wikirevise', description=wiki_modactions.get('config/stylesheet'))
             except ConflictException as e:
                 form.set_html(".status", _('conflict error'))
                 form.set_html(".errors ul", 'There was a conflict while editing the stylesheet')
@@ -1430,7 +1430,8 @@ class ApiController(RedditController):
                 wiki = WikiPage.create(sr.name, pagename)
             try:
                 if wiki.revise(value, previous=prev, author=c.user.name):
-                    ModAction.create(c.site, c.user, 'wikirevise', details=wiki_modactions.get(pagename))
+                    pass
+              #      ModAction.create(c.site, c.user, 'wikirevise', details=wiki_modactions.get(pagename))
                 return True
             except ConflictException as e:
                 c.errors.add(errors.CONFLICT, field = field)
