@@ -394,7 +394,8 @@
                      format = '%(link)s',
                      format_arg = 'link',
                      hidden_data = {},
-                     _class = '')">
+                     _class = '',
+                     block = 'false')">
   <%
      if question is None:
          question = _("are you sure?")
@@ -414,7 +415,7 @@
     <span class="option error">
       ${question}
       &#32;<a href="javascript:void(0)" class="yes"
-         onclick='change_state(this, "${op}", ${callback})'>
+         onclick='change_state(this, "${op}", ${callback}, undefined, ${block})'>
         ${_("yes")}
       </a>&#32;/&#32;
       <a href="javascript:void(0)" class="no"

@@ -184,7 +184,6 @@ class WikiController(RedditController):
         c.page = None
         self.editconflict = False
         c.is_mod = (c.user_is_admin or c.site.is_moderator(c.user)) if c.user_is_loggedin else False
-        c.is_mod = True
         c.wikidisabled = False
         mode = c.site.wikimode
         if not mode or mode == 'disabled':

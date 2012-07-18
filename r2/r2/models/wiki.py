@@ -72,7 +72,6 @@ class WikiRevision(tdb_cassandra.UuidThing, Printable):
     def add_props(cls, user, wrapped):
         for item in wrapped:
             item._hidden = item.is_hidden
-            item._fullname = item._id
             item._spam = False
             item.reported = False
     
