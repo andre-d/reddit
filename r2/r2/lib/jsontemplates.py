@@ -569,17 +569,12 @@ class WikiJsonTemplate(JsonTemplate):
             content = thing.listing
         return ObjectTemplate(content.render() if thing else {})
 
-class WikiPageListingJsonTemplate(ThingJsonTemplate):
+class WikiPageListingJsonTemplate(JsonTemplate):
     def render(self, thing, *a, **kw):
         pages = [p.name for p in thing.linear_pages]
         return ObjectTemplate(dict(pages=pages))
 
-class WikiSettingsJsonTemplate(ThingJsonTemplate):
-    def render(self, thing, *a, **kw):
-        return ObjectTemplate(dict(permlevel=thing.permlevel,
-                                   editors=thing.mayedit))
-
-class WikiViewJsonTemplate(ThingJsonTemplate):
+class WikiViewJsonTemplate(JsonTemplate):
     def render(self, thing, *a, **kw):
         edit_date = time.mktime(thing.edit_date.timetuple()) if thing.edit_date else None
         return ObjectTemplate(dict(content_md=thing.page_content_md,
@@ -587,6 +582,11 @@ class WikiViewJsonTemplate(ThingJsonTemplate):
                                    revision_by=thing.edit_by,
                                    revision_date=edit_date,
                                    may_revise=thing.may_revise))
+
+class WikiSettingsJsonTemplate(ThingJsonTemplate):
+     def render(self, thing, *a, **kw):
+        return ObjectTemplate(dict(permlevel=thing.permlevel,
+                                   editors=thing.mayedit))
 
 class WikiRevisionJsonTemplate(ThingJsonTemplate):
     def render(self, thing, *a, **kw):
