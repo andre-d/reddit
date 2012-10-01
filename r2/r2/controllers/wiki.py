@@ -314,7 +314,7 @@ class WikiApiController(WikiController):
                    VWikiModerator(),
                    pv=VWikiPageAndVersion(('page', 'revision')))
     @api_doc(api_section.wiki, uri='/api/wiki/revert')
-    def POST_wiki_revision_revert(self, pv, page, revision):
+    def POST_wiki_revision_revert(self, pv):
         page, revision = pv
         if not revision:
             self.handle_error(400, 'INVALID_REVISION')
