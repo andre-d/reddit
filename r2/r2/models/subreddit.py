@@ -99,7 +99,8 @@ class Subreddit(Thing, Printable):
                      prev_public_description_id = "",
                      )
     _essentials = ('type', 'name', 'lang')
-    _data_int_props = Thing._data_int_props + ('mod_actions', 'reported')
+    _data_int_props = Thing._data_int_props + ('mod_actions', 'reported',
+                      'wiki_edit_karma', 'wiki_edit_age')
 
     sr_limit = 50
     gold_limit = 100
