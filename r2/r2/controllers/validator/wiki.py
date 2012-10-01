@@ -24,14 +24,16 @@ from os.path import normpath
 import datetime
 import re
 
+from pylons.i18n import _
+
 from pylons.controllers.util import redirect_to
 from pylons import c, g, request
 
 from r2.models.wiki import WikiPage, WikiRevision
 from r2.controllers.validator import (Validator, validate, VSrModerator,
-                                      make_validated_kw)
+                                      make_validated_kw, set_api_docs)
 from r2.lib.db import tdb_cassandra
-
+from r2.lib.utils import wraps_api
 
 MAX_PAGE_NAME_LENGTH = g.wiki_max_page_name_length
 
@@ -39,6 +41,7 @@ MAX_SEPARATORS = g.wiki_max_page_separators
 
 def wiki_validate(*simple_vals, **param_vals):
     def val(fn):
+        @wraps_api(fn)
         def newfn(self, *a, **env):
             kw = make_validated_kw(fn, simple_vals, param_vals, env)
             for e in c.errors:
@@ -46,6 +49,7 @@ def wiki_validate(*simple_vals, **param_vals):
                 if e.code:
                     self.handle_error(e.code, e.name)
             return fn(self, *a, **kw)
+        set_api_docs(newfn, simple_vals, param_vals)
         return newfn
     return val
 
@@ -246,6 +250,9 @@ class VWikiPage(Validator):
             self.set_error('INVALID_REVISION', code=404)
             raise AbortWikiError
 
+    def param_docs(self):
+        return dict(page=_('the name of an existing wiki page'))
+
 class VWikiPageAndVersion(VWikiPage):    
     def run(self, page, *versions):
         wp = VWikiPage.run(self, page)
@@ -258,6 +265,13 @@ class VWikiPageAndVersion(VWikiPage):
             except AbortWikiError:
                 return
         return tuple([wp] + validated)
+    
+    def param_docs(self):
+        doc = VWikiPage.param_docs(self)
+        for param in self.param:
+            if param != 'page':
+                doc[param] = _('a wiki revision ID')
+        return doc
 
 class VWikiPageRevise(VWikiPage):
     def __init__(self, *k, **kw):
@@ -293,5 +307,8 @@ class VWikiPageRevise(VWikiPage):
             return (wp, prev)
         return (wp, None)
     
-
-               
+    def param_docs(self):
+        docs = dict(page=_('the name of an existing page or a new page to create'))
+        if 'previous' in self.param:
+            docs['previous'] = _('the starting point revision for this edit')
+        return docs
