@@ -535,11 +535,15 @@ class SearchBuilder(IDBuilder):
             return True
 
 class WikiRevisionBuilder(QueryBuilder):
+    def show_extended(self):
+        return True
+    
     def wrap_items(self, items):
         types = {}
         wrapped = []
         for item in items:
             w = self.wrap(item)
+            w.show_extended = self.show_extended()
             types.setdefault(w.render_class, []).append(w)
             wrapped.append(w)
         
@@ -553,6 +557,9 @@ class WikiRevisionBuilder(QueryBuilder):
         return not item.is_hidden
 
 class WikiRecentRevisionBuilder(WikiRevisionBuilder):
+    def show_extended(self):
+        return False
+    
     def must_skip(self, item):
         return (datetime.datetime.now(g.tz) - item.date).days >= WIKI_RECENT_DAYS
         
