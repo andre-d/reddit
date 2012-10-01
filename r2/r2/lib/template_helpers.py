@@ -146,8 +146,8 @@ def js_config():
         "static_root": static(''),
     }
 
-    if c.page:
-        config["wiki_page"] = c.page
+    if c.wiki_page:
+        config["wiki_page"] = c.wiki_page
 
     return config
 
