@@ -172,10 +172,9 @@ class Account(Thing):
         karma = self.link_karma
         return max(karma, 1) if karma > -1000 else karma
 
-    def can_wiki(self):
+    def can_wiki(self, default=False):
         if self.wiki_override is None:
-            # Legacy, None means user may wiki
-            return True
+            return default
         return self.wiki_override
     
     def jury_betatester(self):

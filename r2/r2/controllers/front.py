@@ -1274,7 +1274,7 @@ class FormsController(RedditController):
         returns their user name"""
         c.response_content_type = 'text/plain'
         if c.user_is_loggedin:
-            perm = str(c.user.can_wiki())
+            perm = str(c.user.can_wiki(default=None))
             c.response.content = c.user.name + "," + perm
         else:
             c.response.content = ''
