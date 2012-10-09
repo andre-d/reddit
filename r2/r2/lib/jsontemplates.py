@@ -590,7 +590,7 @@ class WikiSettingsJsonTemplate(ThingJsonTemplate):
 
 class WikiRevisionJsonTemplate(ThingJsonTemplate):
     def render(self, thing, *a, **kw):
-        timestamp = time.mktime(thing.date.timetuple()) if thing.edit_date else None
+        timestamp = time.mktime(thing.date.timetuple()) if thing.date else None
         return ObjectTemplate(dict(author=thing._get('author'),
                                    id=str(thing._id),
                                    timestamp=timestamp,
