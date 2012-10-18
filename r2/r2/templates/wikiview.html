@@ -43,7 +43,7 @@
     <hr/>
     <em>
         %if thing.edit_by:
-             ${_("revision by")}&nbsp;${WrappedUser(thing.edit_by)}
+             ${unsafe(_("revision by&nbsp;%s") % WrappedUser(thing.edit_by).render())}
              &mdash;
         %endif
         ${timestamp(thing.edit_date)}&nbsp;ago
