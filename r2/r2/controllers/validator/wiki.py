@@ -276,10 +276,8 @@ class VWikiPageAndVersion(VWikiPage):
         return tuple([wp] + validated)
     
     def param_docs(self):
-        doc = VWikiPage.param_docs(self)
-        for param in self.param:
-            if param != 'page':
-                doc[param] = _('a wiki revision ID')
+        doc = dict.fromkeys(self.param, _('a wiki revision ID'))
+        doc.update(VWikiPage.param_docs(self))
         return doc
 
 class VWikiPageRevise(VWikiPage):
