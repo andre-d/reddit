@@ -1,7 +1,7 @@
 r.wiki = {
     request: function(req) {
         if (reddit.logged)
-            req.data.uh = reddit.modhash;
+            req.data.uh = r.config.modhash
         req.data.page = r.config.wiki_page
         $.ajax(req)
     },
@@ -56,7 +56,7 @@ r.wiki = {
         event.preventDefault()
         $('#usereditallowerror').hide()
         var $this = $(event.target),
-            url = r.wiki.baseApiUrl(true) + '/alloweditor/add'
+            url = r.wiki.baseApiUrl() + '/alloweditor/add'
         r.wiki.request({
             url: url,
             type: 'POST',
@@ -83,7 +83,8 @@ r.wiki = {
         conflict.hide()
         special.hide()
         $.each($this.serializeArray(), function(index,value) {
-               params[value.name] = value.value;});
+            params[value.name] = value.value
+        })
         r.wiki.request({
             url: url,
             type: 'POST',
