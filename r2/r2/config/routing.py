@@ -193,7 +193,7 @@ def make_map():
        requirements=dict(action="help|blog|faq"))
     mc('/help/*anything', controller='embed', action='help')
     
-    mc('/wiki/notfound/*page', controller='wiki', action='wiki_notfound')
+    mc('/wiki/create/*page', controller='wiki', action='wiki_create')
     mc('/wiki/edit/*page', controller='wiki', action='wiki_revise')
     mc('/wiki/revisions/*page', controller='wiki', action='wiki_revisions')
     mc('/wiki/settings/*page', controller='wiki', action='wiki_settings')
