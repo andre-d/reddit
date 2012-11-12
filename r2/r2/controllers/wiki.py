@@ -334,7 +334,6 @@ class WikiApiController(WikiController):
         if not revision:
             self.handle_error(400, 'INVALID_REVISION')
         content = revision.content
-        author = revision._get('author')
         reason = 'reverted back %s' % timesince(revision.date)
         if page.name == 'config/stylesheet':
             report, parsed = c.site.parse_css(content)
@@ -343,7 +342,7 @@ class WikiApiController(WikiController):
             c.site.change_css(content, parsed, prev=None, reason=reason, force=True)
         else:
             try:
-                page.revise(content, author=author, reason=reason, force=True)
+                page.revise(content, author=c.user._id36, reason=reason, force=True)
 
                 # continue storing the special pages as data attributes on the subreddit
                 # object. TODO: change this to minimize subreddit get sizes.
