@@ -20,12 +20,26 @@
 # Inc. All Rights Reserved.
 ###############################################################################
 
-from r2.lib.template_helpers import s3_https_if_secure
 from r2.lib.media import upload_media
 
 class BadImage(Exception):
     def __init__(self, error = None):
         self.error = error
+
+def legacy_s3_url(url, site):
+    if isinstance(url, int): # legacy url, needs to be generated
+        bucket = g.s3_old_thumb_bucket
+        baseurl = "http://%s" % (bucket)
+        if g.s3_media_direct:
+            baseurl = "http://%s/%s" % (s3_direct_url, bucket)
+        url = "%s/%s_%d.png"\
+                % (baseurl, site._fullname, url)
+    return url
+
+def url_for_image(name, site):
+    url = site.images[name]
+    url = legacy_s3_url(url, site)
+    return url
 
 def save_sr_image(sr, data, suffix = '.png'):
     try:
