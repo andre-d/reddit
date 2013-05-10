@@ -37,20 +37,10 @@ from r2.lib.validator import (
 )
 from r2.controllers.api_docs import api_doc, api_section
 from r2.models.modaction import ModAction
+from r2.models.images import BadImage, save_sr_image
 from r2.lib.scraper import str_to_image
 from r2.lib.pages import UploadedImage
-from r2.lib.media import upload_media
 from r2.lib import cssfilter
-
-class BadImage(Exception):
-    def __init__(self, error = None):
-        self.error = error
-
-def save_sr_image(sr, data, suffix = '.png'):
-    try:
-        return upload_media(data, file_type = suffix)
-    except IOError as e:
-        raise BadImage(e)
 
 class ImagesController(RedditController, OAuth2ResourceController):
     def GET_upload_sr_img(self, *a, **kw):
