@@ -238,15 +238,15 @@ def safemarkdown(text, nofollow=False, wrap=True, **kwargs):
         return SC_OFF + text + SC_ON
 
 def wikimarkdown(text, include_toc=True, target=None):
-    from r2.lib.cssfilter import legacy_s3_url
-    
+    from r2.models.images import url_for_image
+
     def img_swap(tag):
         name = tag.get('src')
         name = custom_img_url.search(name)
         name = name and name.group(1)
         if name and c.site.images.has_key(name):
-            url = c.site.images[name]
-            url = legacy_s3_url(url, c.site)
+            url = url_for_image(name, c.site)
+            url = s3_https_if_secure(url)
             tag['src'] = url
         else:
             tag.extract()

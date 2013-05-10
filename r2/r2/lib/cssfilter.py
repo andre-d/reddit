@@ -35,7 +35,7 @@ import os
 import tempfile
 from r2.lib import s3cp
 
-from r2.lib.template_helpers import s3_https_if_secure
+from r2.models.images import url_for_image
 
 import re
 from urlparse import urlparse
@@ -175,17 +175,6 @@ class ValidationError(Exception):
         obj = str(self.obj) if hasattr(self,'obj') else ''
         return "ValidationError%s: %s (%s)" % (line, self.message, obj)
 
-def legacy_s3_url(url, site):
-    if isinstance(url, int): # legacy url, needs to be generated
-        bucket = g.s3_old_thumb_bucket
-        baseurl = "http://%s" % (bucket)
-        if g.s3_media_direct:
-            baseurl = "http://%s/%s" % (s3_direct_url, bucket)
-        url = "%s/%s_%d.png"\
-                % (baseurl, site._fullname, url)
-    url = s3_https_if_secure(url)
-    return url
-
 # local urls should be in the static directory
 local_urls = re.compile(r'\A/static/[a-z./-]+\Z')
 # substitutable urls will be css-valid labels surrounded by "%%"
@@ -219,8 +208,7 @@ def valid_url(prop,value,report):
         name = custom_img_urls.match(url).group(1)
         # the label -> image number lookup is stored on the subreddit
         if c.site.images.has_key(name):
-            url = c.site.images[name]
-            url = legacy_s3_url(url, c.site)
+            url = url_for_image(name, c.site)
             value._setCssText("url(%s)"%url)
         else:
             # unknown image label -> error
