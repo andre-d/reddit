@@ -244,8 +244,9 @@ def wikimarkdown(text, include_toc=True, target=None):
         name = tag.get('src')
         name = custom_img_url.search(name)
         name = name and name.group(1)
-        if name and c.site.images.has_key(name):
-            url = url_for_image(name, c.site)
+        image = ImagesByOwner.get(c.site, name)
+        if image:
+            url = image.url
             url = s3_https_if_secure(url)
             tag['src'] = url
         else:

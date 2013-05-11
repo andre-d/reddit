@@ -50,6 +50,7 @@ from r2.lib.cache import CL_ONE
 from r2.lib.contrib.rcssmin import cssmin
 from r2.lib import s3cp
 from r2.models.query_cache import MergedCachedQuery
+from r2.models.images import ImagesByOwner
 
 import math
 
@@ -785,53 +786,8 @@ class Subreddit(Thing, Printable):
         Iterator over list of (name, url) pairs which have been
         uploaded for custom styling of this subreddit. 
         """
-        for name, img in self.images.iteritems():
-            if name != "/empties/":
-                yield (name, img)
-    
-    def get_num_images(self):
-        if '/empties/' in self.images:
-            return len(self.images) - 1
-        else:
-            return len(self.images)
-    
-    def add_image(self, name, url, max_num = None):
-        """
-        Adds an image to the subreddit's image list.  The resulting
-        number of the image is returned.  Note that image numbers are
-        non-sequential insofar as unused numbers in an existing range
-        will be populated before a number outside the range is
-        returned.
-
-        raises ValueError if the resulting number is >= max_num.
-
-        The Subreddit will be _dirty if a new image has been added to
-        its images list, and no _commit is called.
-        """
-        if max_num is not None and self.get_num_images() >= max_num:
-            raise ValueError, "too many images"
-        
-        # copy and blank out the images list to flag as _dirty
-        l = self.images
-        self.images = None
-        # update the dictionary and rewrite to images attr
-        l[name] = url
-        self.images = l
-
-    def del_image(self, name):
-        """
-        Deletes an image from the images dictionary assuming an image
-        of that name is in the current dictionary.
-
-        The Subreddit will be _dirty if image has been removed from
-        its images list, and no _commit is called.
-        """
-        if self.images.has_key(name):
-            l = self.images
-            self.images = None
-
-            del l[name]
-            self.images = l
+        for image in ImagesByOwner.getall(self):
+            yield image.name, image.url
 
     def __eq__(self, other):
         if type(self) != type(other):
@@ -1129,10 +1085,6 @@ class DefaultSR(_DefaultSR):
     @property
     def _fullname(self):
         return "t5_6"
-    
-    @property
-    def images(self):
-        return self._base.images
     
     @property
     def _id36(self):

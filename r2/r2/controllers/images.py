@@ -37,7 +37,8 @@ from r2.lib.validator import (
 )
 from r2.controllers.api_docs import api_doc, api_section
 from r2.models.modaction import ModAction
-from r2.models.images import BadImage, save_sr_image
+
+from r2.models.images import BadImage, Image, ImagesByOwner
 from r2.lib.scraper import str_to_image
 from r2.lib.pages import UploadedImage
 from r2.lib import cssfilter
@@ -92,25 +93,22 @@ class ImagesController(RedditController, OAuth2ResourceController):
                 # error if the name wasn't specified and the image was not for a sponsored link or header
                 # this may also fail if a sponsored image was added and the user is not an admin
                 errors['BAD_CSS_NAME'] = _("bad image name")
-        
-        if c.site.images and add_image_to_sr:
-            if c.site.get_num_images() >= g.max_sr_images:
-                errors['IMAGE_ERROR'] = _("too many images (you only get %d)") % g.max_sr_images
 
         if any(errors.values()):
             return UploadedImage("", "", "", errors=errors, form_id=form_id).render()
         else:
             try:
-                new_url = save_sr_image(c.site, file, suffix ='.' + img_type)
+                owner = c.site if add_image_to_sr else None
+                image = Image.new(owner, file, name, suffix ='.' + img_type)
+                if add_image_to_sr:
+                    ImagesByOwner.add_object(image)
             except BadImage:
                 errors['IMAGE_ERROR'] = _("Invalid image or general image error")
                 return UploadedImage("", "", "", errors=errors, form_id=form_id).render()
             size = str_to_image(file).size
             if header:
-                c.site.header = new_url
+                c.site.header = image.storageurl
                 c.site.header_size = size
-            if add_image_to_sr:
-                c.site.add_image(name, url = new_url)
             c.site._commit()
 
             if header:
@@ -119,7 +117,7 @@ class ImagesController(RedditController, OAuth2ResourceController):
                 kw = dict(details='upload_image', description=name)
             ModAction.create(c.site, c.user, action='editsettings', **kw)
 
-            return UploadedImage(_('saved'), new_url, name, 
+            return UploadedImage(_('saved'), image.url, name, 
                                  errors=errors, form_id=form_id).render()
 
     @require_oauth2_scope("modconfig")
@@ -136,8 +134,7 @@ class ImagesController(RedditController, OAuth2ResourceController):
         # just in case we need to kill this feature from XSS
         if g.css_killswitch:
             return self.abort(403,'forbidden')
-        c.site.del_image(name)
-        c.site._commit()
+        ImagesByOwner.delete(c.site, name)
         ModAction.create(c.site, c.user, action='editsettings', 
                          details='del_image', description=name)
 

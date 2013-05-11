@@ -20,29 +20,92 @@
 # Inc. All Rights Reserved.
 ###############################################################################
 
-from r2.lib.media import upload_media
+import json
+
+from r2.lib.db import tdb_cassandra
 
 class BadImage(Exception):
     def __init__(self, error = None):
         self.error = error
 
-def legacy_s3_url(url, site):
-    if isinstance(url, int): # legacy url, needs to be generated
-        bucket = g.s3_old_thumb_bucket
-        baseurl = "http://%s" % (bucket)
-        if g.s3_media_direct:
-            baseurl = "http://%s/%s" % (s3_direct_url, bucket)
-        url = "%s/%s_%d.png"\
-                % (baseurl, site._fullname, url)
-    return url
+IMAGE_ID_SEP = '\t'
 
-def url_for_image(name, site):
-    url = site.images[name]
-    url = legacy_s3_url(url, site)
-    return url
+def url_for_image(name, owner):
+    return ImagesByOwner.get(owner, name).url
 
-def save_sr_image(sr, data, suffix = '.png'):
-    try:
-        return upload_media(data, file_type = suffix)
-    except IOError as e:
-        raise BadImage(e)
+class Image(object):
+    _attrs = ['owner', 'name', 'storageurl']
+    
+    def __init__(self, owner=None, name=None, storageurl=None):
+        self.owner = owner
+        self.name = name
+        self.storageurl = storageurl
+    
+    @property
+    def url(self):
+        return self.storageurl
+    
+    @property
+    def _id(self):
+        return self.name
+    
+    @classmethod
+    def new(cls, owner, data, name, suffix = '.png'):
+        from r2.lib.media import upload_media
+        try:
+            owner = owner._fullname if owner else None
+            image = cls(owner, name, upload_media(data, file_type = suffix))
+            return image
+        except IOError as e:
+            raise BadImage(e)
+
+class GenericDenormalizedView(tdb_cassandra.DenormalizedView):
+    @classmethod
+    def _thing_dumper(cls, thing):
+        props = {}
+        for prop in cls._view_of._attrs:
+            props[prop] = getattr(thing, prop, None)
+        return json.dumps(props)
+    
+    @classmethod
+    def _byID(cls, row, id):
+        dump = cls._cf.get(row, columns=[id]).get(id, None)
+        if dump == None:
+            return None
+        return cls._thing_loader(id, dump)
+    
+    @classmethod
+    def _thing_loader(cls, _id, dump):
+        serialized_props = json.loads(dump)
+        new = cls._view_of()
+        for prop in cls._view_of._attrs:
+            value = serialized_props.get(prop, None)
+            setattr(new, prop, value)
+        return new
+
+class ImagesByOwner(GenericDenormalizedView):
+    
+    _use_db = True
+    _connection_pool = 'main'
+    _view_of = Image
+    
+    @classmethod
+    def delete(cls, owner, name):
+        cls._remove(owner._fullname, [name])
+    
+    @classmethod
+    def delete_object(cls, image):
+        cls._remove(owner._fullname, [image.name])
+    
+    @classmethod
+    def get(cls, owner, name):
+        return cls._byID(owner._fullname, name)
+    
+    @classmethod
+    def getall(cls, owner):
+        return cls.query([owner._fullname])
+    
+    @classmethod
+    def _rowkey(cls, image):
+        return image.owner
+

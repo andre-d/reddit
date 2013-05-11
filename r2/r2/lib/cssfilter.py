@@ -35,7 +35,7 @@ import os
 import tempfile
 from r2.lib import s3cp
 
-from r2.models.images import url_for_image
+from r2.models.images import url_for_image, ImagesByOwner
 
 import re
 from urlparse import urlparse
@@ -207,8 +207,9 @@ def valid_url(prop,value,report):
     elif custom_img_urls.match(url):
         name = custom_img_urls.match(url).group(1)
         # the label -> image number lookup is stored on the subreddit
-        if c.site.images.has_key(name):
-            url = url_for_image(name, c.site)
+        image = ImagesByOwner.get(c.site, name)
+        if image:
+            url = image.url
             value._setCssText("url(%s)"%url)
         else:
             # unknown image label -> error
