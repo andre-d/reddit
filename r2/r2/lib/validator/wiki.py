@@ -30,7 +30,7 @@ from pylons.i18n import _
 from pylons.controllers.util import redirect_to
 from pylons import c, g, request
 
-from r2.models.wiki import WikiPage, WikiRevision
+from r2.models.wiki import WikiPage, WikiRevision, WikiPagePermissions
 from r2.lib.validator import (
     Validator,
     VSrModerator,
@@ -93,8 +93,8 @@ def may_revise(sr, user, page=None):
         # They should not be allowed to revise
         return False
     
-    if page and page.permlevel > 0:
-        # If the page is beyond "anyone may contribute"
+    if page and page.permlevel != WikiPagePermissions.ANYONE:
+        # If the page is not "anyone may contribute"
         # A normal user should not be allowed to revise
         return False
     
@@ -142,12 +142,12 @@ def may_view(sr, user, page):
     
     level = page.permlevel
     
-    if level < 2:
-        # Everyone may view in levels below 2
+    if level in (WikiPagePermissions.ANYONE, WikiPagePermissions.PAGEAPPROVED):
+        # Everyone may view in ANYONE and PAGEAPPROVED mode
         return True
     
-    if level == 2:
-        # Only mods may view in level 2
+    if level == WikiPagePermissions.MODONLY:
+        # Only mods may view in MODONLY mode
         return mod
     
     # In any other obscure level,

@@ -73,6 +73,13 @@ class WikiPageEditors(tdb_cassandra.View):
     _value_type = 'str'
     _connection_pool = 'main'
 
+class WikiPagePermissions(object):
+    ANYONE = 0
+    PAGEAPPROVED = 1
+    MODONLY = 2
+    
+    all = frozenset(ANYONE, PAGEAPPROVED, MODONLY)
+
 class WikiRevision(tdb_cassandra.UuidThing, Printable):
     """ Contains content (markdown), author of the edit, page the edit belongs to, and datetime of the edit """
     
@@ -329,10 +336,9 @@ class WikiPage(tdb_cassandra.Thing):
         return wr
     
     def change_permlevel(self, permlevel, force=False):
-        NUM_PERMLEVELS = 3
         if permlevel == self.permlevel:
             return
-        if not force and int(permlevel) not in range(NUM_PERMLEVELS):
+        if not force and int(permlevel) not in WikiPagePermissions.all:
             raise ValueError('Permlevel not valid')
         self.permlevel = permlevel
         self._commit()
