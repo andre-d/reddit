@@ -127,6 +127,7 @@ def make_map():
     mc('/user/:username/:where', controller='user', action='listing',
        where='overview')
     mc('/u/:username', controller='redirect', action='user_redirect')
+    mc('/info/:username', controller='front', action='userinfo')
 
     # preserve timereddit URLs from 4/1/2012
     mc('/t/:timereddit', controller='redirect', action='timereddit_redirect')

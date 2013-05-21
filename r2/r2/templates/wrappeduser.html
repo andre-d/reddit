@@ -29,6 +29,9 @@
   %if user.has_flair and enabled:
     <span class="flair ${user.flair_css_class}" title="${user.flair_text}">${user.flair_text}</span>
   %endif
+  %if user.flair_modtext is not None:
+    <span class="flair flair_modtext inline_edit" data-user="user.name" title="${user.flair_modtext}">${user.flair_modtext}</span>
+  %endif
 </%def>
 
 %if context_deleted and not c.user_is_admin:

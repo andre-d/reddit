@@ -29,6 +29,47 @@ r.ui.init = function() {
     })
 
     r.ui.PermissionEditor.init()
+    r.ui.InlineEditor.init()
+}
+
+r.ui.InlineEditor = {    
+    edit: function(el) {
+        el.addClass("editing")
+        var text = el.text()
+        el.html($("<form>").append("<input>"))
+        var form = el.find("form")
+        var input = el.find("input")
+        input.focus().val(text)
+        var done = function(e) {
+            e.preventDefault()
+            r.ui.InlineEditor.save(el, text, input.val())
+            el.on("click", r.ui.InlineEditor.begin)
+        }
+        form.on('submit', done)
+        input.on('blur', function() { form.submit() })
+    },
+
+    begin: function(e) {
+        $target = $(e.target)
+        $target.off("click")
+        r.ui.InlineEditor.edit($target)
+    },
+
+    save: function(el, oldval, newval) {
+        el.removeClass("editing")
+        window.setTimeout(function() {el.text(newval)}, 0)
+    },
+
+    handle: function(elements, handler) {
+        elements.on('submit', 'form', function(e) {
+            $this = $(this)
+            handler($this.parent(), $this.find('input').val())
+        })
+    },
+
+    init: function() {
+        $('.inline_edit').on('click', r.ui.InlineEditor.begin)
+    }
 }
 
 r.ui.Form = function(el) {

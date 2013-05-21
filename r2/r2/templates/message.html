@@ -52,7 +52,7 @@ ${parent.thing_css_class(what)} ${"new" if thing.new else ""} ${"was-comment" if
      </a>
   <span class="head">
   <%
-   author = WrappedUser(thing.author, thing.attribs, thing).render()
+   author = WrappedUser(thing.author, thing.attribs, thing, subreddit=thing.subreddit if thing.sr_id else None, show_modtext=True, force_no_flair=True).render()
    if thing.sr_id:
      subreddit = '<a href="%s">%s</a>' % (thing.subreddit.path,
                                           thing.subreddit.path)

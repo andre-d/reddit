@@ -22,6 +22,7 @@
 
 from collections import OrderedDict
 
+from r2.lib.template_helpers import add_attr
 from r2.lib.wrapped import Wrapped, Templated, CachedTemplate
 from r2.models import Account, FakeAccount, DefaultSR, make_feedurl
 from r2.models import FakeSubreddit, Subreddit, SubSR, AllMinus, AllSR
@@ -2507,16 +2508,22 @@ class Embed(Templated):
 
 
 def wrapped_flair(user, subreddit, force_show_flair):
-    if (not hasattr(subreddit, '_id')
-        or not (force_show_flair or getattr(subreddit, 'flair_enabled', True))):
-        return False, 'right', '', ''
-
     get_flair_attr = lambda a, default=None: getattr(
         user, 'flair_%s_%s' % (subreddit._id, a), default)
+    
+    modtext = None
+    
+    if not isinstance(subreddit, FakeSubreddit):
+        modtext = get_flair_attr('modtext') or ''
+    
+    if (not hasattr(subreddit, '_id')
+        or not (force_show_flair or getattr(subreddit, 'flair_enabled', True))):
+        return False, 'right', '', '', modtext
 
     return (get_flair_attr('enabled', default=True),
             getattr(subreddit, 'flair_position', 'right'),
-            get_flair_attr('text'), get_flair_attr('css_class'))
+            get_flair_attr('text'), get_flair_attr('css_class'),
+            modtext)
 
 class WrappedUser(CachedTemplate):
     FLAIR_CSS_PREFIX = 'flair-'
@@ -2524,10 +2531,12 @@ class WrappedUser(CachedTemplate):
     def __init__(self, user, attribs = [], context_thing = None, gray = False,
                  subreddit = None, force_show_flair = None,
                  flair_template = None, flair_text_editable = False,
-                 include_flair_selector = False):
+                 include_flair_selector = False, show_modtext=False,
+                 force_no_flair=False, add_info_link=True):
         if not subreddit:
             subreddit = c.site
-
+        
+        attribs = list(attribs)
         attribs.sort()
         author_cls = 'author'
 
@@ -2541,9 +2550,12 @@ class WrappedUser(CachedTemplate):
                 author_title = tup[3]
 
         flair = wrapped_flair(user, subreddit or c.site, force_show_flair)
-        flair_enabled, flair_position, flair_text, flair_css_class = flair
+        flair_enabled, flair_position, flair_text, flair_css_class, flair_modtext = flair
         has_flair = bool(
             c.user.pref_show_flair and (flair_text or flair_css_class))
+
+        if force_no_flair:
+            flair_enabled = False
 
         if flair_template:
             flair_template_id = flair_template._id
@@ -2552,6 +2564,14 @@ class WrappedUser(CachedTemplate):
             has_flair = True
         else:
             flair_template_id = None
+
+        if not c.user_is_loggedin or ((not (subreddit or c.site).is_moderator(c.user)) and not c.user_is_admin):
+            flair_modtext = None
+        elif show_modtext and add_info_link and False:
+            add_attr(attribs, 'special', label='Information about this user', symbol='i', link=add_sr('/info/%s' % user.name, site=subreddit))
+       
+        if not show_modtext:
+            flair_modtext = None
 
         if flair_css_class:
             # This is actually a list of CSS class *suffixes*. E.g., "a b c"
@@ -2583,6 +2603,7 @@ class WrappedUser(CachedTemplate):
                                 has_flair = has_flair,
                                 flair_enabled = flair_enabled,
                                 flair_position = flair_position,
+                                flair_modtext = flair_modtext,
                                 flair_text = flair_text,
                                 flair_text_editable = flair_text_editable,
                                 flair_css_class = flair_css_class,
@@ -2697,6 +2718,7 @@ class FlairListRow(Templated):
                                            'flair_%s_%s' % (c.site._id, a), '')
         Templated.__init__(self, user=user,
                            flair_text=get_flair_attr('text'),
+                           flair_modtext=get_flair_attr('modtext'),
                            flair_css_class=get_flair_attr('css_class'))
 
 class FlairNextLink(Templated):
@@ -4037,7 +4059,6 @@ class ModeratorPermissions(Templated):
         Templated.__init__(self, permissions_type=permissions_type,
                            editable=editable, embedded=embedded)
 
-
 class PolicyView(Templated):
     pass
 
@@ -4060,3 +4081,24 @@ class PolicyPage(BoringPage):
                                 base_path='/help')
         toolbars.append(policies_menu)
         return toolbars
+
+class UserInfoPage(BoringPage):
+    def __init__(self, sr, user):
+        self.sr = sr
+        self.user = user
+        
+        self.wrappeduser = WrappedUser(self.user, subreddit=self.sr, force_show_flair=True, show_modtext=True, add_info_link=False)
+        
+        self.karma = self.user.karma('link', self.sr)
+        self.commentkarma = self.user.karma('comment', self.sr)
+        
+        self.moderator = self.sr.get_moderator(self.user)
+        self.modpermission = None
+        if self.moderator:
+            self.modpermission = ModeratorPermissions(self.user, "moderator", self.moderator.get_permissions(), embedded=True)
+        self.moderator_invite = self.sr.get_moderator_invite(self.user)
+        self.contributor = self.sr.get_contributor(self.user)
+        self.banned = self.sr.get_banned(self.user)
+
+        BoringPage.__init__(self, '/u/%s moderation info' % user.name)
+

@@ -53,6 +53,17 @@ class Flair(Relation(Subreddit, Account)):
         return [t._id for t in q]
 
     @classmethod
+    @memoize('flair.all_flair_by_user')
+    def all_flair_by_user_cache(cls, user_id):
+        q = cls._query(cls.c._thing2_id == user_id)
+        return [t._id for t in q]
+
+    @classmethod
+    def all_flair_by_user(cls, user_id, _update=False):
+        relids = cls.all_flair_by_user_cache(user_id, _update=_update)
+        return cls._byID(relids).itervalues()
+
+    @classmethod
     def all_flair_by_sr(cls, sr_id, _update=False):
         relids = cls.all_flair_by_sr_cache(sr_id, _update=_update)
         return cls._byID(relids).itervalues()

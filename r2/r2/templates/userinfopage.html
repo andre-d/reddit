@@ -1,0 +1,89 @@
+## The contents of this file are subject to the Common Public Attribution
+## License Version 1.0. (the "License"); you may not use this file except in
+## compliance with the License. You may obtain a copy of the License at
+## http://code.reddit.com/LICENSE. The License is based on the Mozilla Public
+## License Version 1.1, but Sections 14 and 15 have been added to cover use of
+## software over a computer network and provide for limited attribution for the
+## Original Developer. In addition, Exhibit A has been modified to be
+## consistent with Exhibit B.
+##
+## Software distributed under the License is distributed on an "AS IS" basis,
+## WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
+## the specific language governing rights and limitations under the License.
+##
+## The Original Code is reddit.
+##
+## The Original Developer is the Initial Developer.  The Initial Developer of
+## the Original Code is reddit Inc.
+##
+## All portions of the code written by reddit are Copyright (c) 2006-2013
+## reddit Inc. All Rights Reserved.
+###############################################################################
+
+<%!
+   from r2.lib.template_helpers import add_sr, js_config, static, html_datetime
+   from r2.lib.utils import cols, long_datetime, timesince
+%>
+
+<%namespace name="utils" file="utils.html"/>
+<%inherit file="reddit.html"/>
+
+<%def name="rel_timestamp(rel, rel_name, permission=None)">
+  %if rel:
+    <li>
+      <b>${rel_name}</b>&#32;
+      <time title="${long_datetime(rel._date)}"
+            datetime="${html_datetime(rel._date)}">
+        ${unsafe(_('since %(when)s ago') % dict(when=timesince(rel._date)))}
+      </time>
+      %if getattr(rel, 'note', None):
+        <span class="rel-note">(<i>${rel.note}</i>)</span>
+      %endif
+      &mdash;
+      <span class="rel-remove">(<b><a href="#">${_('remove')}</a></b>)</span>
+      %if permission:
+       ${permission}
+       <span class="permissions-edit">
+        (<a href="javascript:void(0)">${_('change')}</a>)
+      </span>
+      %endif
+    </li>
+  %endif
+</%def>
+
+<%def name="content()">
+  <div class="notes">
+
+    <h1>${thing.wrappeduser}</h1>
+    <hr/>
+    <div class="karmainfo">
+        <ul>
+            <li>${thing.karma}&nbsp;<b>subreddit link karma</b></li>
+            <li>${thing.commentkarma}&nbsp;<b>subreddit comment karma</b></li>
+        </ul>
+    </div>
+    <div class="relations">
+        <ul>
+            ${rel_timestamp(thing.moderator, _('moderator'), thing.modpermission)}
+            ${rel_timestamp(thing.moderator_invite, _('invited moderator'))}
+            ${rel_timestamp(thing.contributor, _('approved submitter'))}
+            ${rel_timestamp(thing.banned, _('banned'))}
+        </ul>
+    </div>
+    <hr/>
+    <div class="addrelations">
+        <ul>
+        %if not thing.banned:
+            <li><a href="#">ban this user</a></li>
+            %if not (thing.moderator or thing.moderator_invite):
+                <li><a href="#">add as moderator</a></li>
+            %endif
+            %if not thing.contributor:
+                <li><a href="#">approve as submitter</a></li>
+            %endif
+        %endif
+        </ul>
+    </div>
+  </div>
+</%def>
+

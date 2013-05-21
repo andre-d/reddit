@@ -381,7 +381,7 @@ def dockletStr(context, type, browser):
 
 
 
-def add_sr(path, sr_path = True, nocname=False, force_hostname = False, retain_extension=True):
+def add_sr(path, sr_path = True, nocname=False, force_hostname = False, retain_extension=True, site=None):
     """
     Given a path (which may be a full-fledged url or a relative path),
     parses the path and updates it to include the subreddit path
@@ -408,7 +408,7 @@ def add_sr(path, sr_path = True, nocname=False, force_hostname = False, retain_e
 
     u = UrlParser(path)
     if sr_path and (nocname or not c.cname):
-        u.path_add_subreddit(c.site)
+        u.path_add_subreddit(site or c.site)
 
     if not u.hostname or force_hostname:
         if c.secure:

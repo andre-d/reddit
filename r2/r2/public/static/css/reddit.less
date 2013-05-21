@@ -6710,3 +6710,30 @@ body.gold .buttons li.comment-save-button { display: inline; }
     text-align: left;
     white-space: normal;
 }
+
+.inline_edit input {
+    border: none;
+    outline: none;
+    background-color: inherit;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    font-family: inherit;
+    margin: 0;
+    padding: 0;
+}
+
+.inline_edit form {
+    display: inline-block;
+}
+
+.inline_edit:after {
+    content: " ";
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-left: 5px;
+    background-image: url(../pencil-small.png);  /* SPRITE */
+}
