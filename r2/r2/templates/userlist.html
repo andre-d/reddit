@@ -21,7 +21,9 @@
 ###############################################################################
 
 <%namespace file="utils.html" import="error_field"/>
-<% from r2.lib.template_helpers import static %>
+<% from r2.lib.template_helpers import static
+   from r2.lib.filters import unsafe
+%>
 
 <%def name="add_form(title, dest, add_type, container_name, verb=None)">
   <% from r2.models import ModeratorPermissionSet %>
@@ -80,7 +82,7 @@
       %endif
       %if rows:
         %for item in rows:
-          ${item}
+          ${unsafe(item)}
         %endfor
       %else:
         <tr><td></td></tr>

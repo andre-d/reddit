@@ -571,7 +571,7 @@ class UserListJsonTemplate(ThingJsonTemplate):
         if attr == "users":
             res = []
             for a in thing.user_rows:
-                r = a.render()
+                r = a
                 res.append(r)
             return res
         return ThingJsonTemplate.thing_attr(self, thing, attr)

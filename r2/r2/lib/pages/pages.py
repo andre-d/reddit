@@ -2905,7 +2905,7 @@ class UserList(Templated):
             for u in users:
                 if not u._deleted:
                     editable = editable_fn(u) if editable_fn else self.editable
-                    rows.append(self.user_row(row_type, u, editable))
+                    rows.append(self.user_row(row_type, u, editable).render())
             return rows
         else:
             return []
