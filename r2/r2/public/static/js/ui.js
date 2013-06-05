@@ -29,7 +29,53 @@ r.ui.init = function() {
     })
 
     r.ui.PermissionEditor.init()
+
+    $('.inline-editor').each(function(idx, el) {
+        $(el).data('InlineEditor', new r.ui.InlineEditor({el: el}))
+    })
 }
+
+r.ui.InlineEditor = Backbone.View.extend({
+    events: {
+        'click': 'edit',
+        'submit form': 'save',
+        'blur input': 'blur'
+    },
+
+    edit: function() {
+        if(this.$el.hasClass('editing')) {
+            return
+        }
+        if (!this.$form) {
+            this.create()
+        }
+        this.$el.addClass('editing')
+        this.$input.focus().val(this.$span.text())
+    },
+
+    create: function($el) {
+        this.text = this.$el.text()
+        this.$el.empty()
+        this.$span = $('<span>').text(this.text)
+        this.$el.append(this.$span)
+        this.$form = $('<form>')
+        this.$input = $('<input type="text">')
+        this.$el.append(this.$form.append(this.$input))
+    },
+
+    blur: function() {
+        if(this.$el.hasClass('editing')) {
+            this.$form.submit()
+        }
+    },
+
+    save: function(e) {
+        e.preventDefault()
+        this.editing = false
+        this.$el.removeClass('editing')
+        this.$span.text(this.$input.val())
+    }
+})
 
 r.ui.Form = function(el) {
     r.ui.Base.call(this, el)

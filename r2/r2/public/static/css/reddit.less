@@ -6700,3 +6700,46 @@ body.gold .buttons li.comment-save-button { display: inline; }
     text-align: left;
     white-space: normal;
 }
+
+.inline-editor {
+    input, span {
+        border: none;
+        outline: none;
+        background-color: inherit;
+        color: inherit;
+        font-size: inherit;
+        font-weight: inherit;
+        line-height: inherit;
+        letter-spacing: inherit;
+        font-family: inherit;
+        margin: 0;
+        padding: 0;
+    }
+
+    span {
+        display: inline-block;
+    }
+
+    form {
+        display: none;
+    }
+}
+
+.inline-editor.editing {
+    form {
+        display: inline-block;
+    }
+
+    span {
+        display: none;
+    }
+}
+
+.inline-editor:after {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-left: 5px;
+    background-image: url(../pencil-small.png);  /* SPRITE */
+}
