@@ -63,12 +63,14 @@ from r2.lib.menus import SubredditButton, SubredditMenu, ModeratorMailButton
 from r2.lib.menus import OffsiteButton, menu, JsNavMenu
 from r2.lib.strings import plurals, rand_strings, strings, Score
 from r2.lib.utils import title_to_url, query_string, UrlParser, vote_hash
+from r2.lib.utils import is_subdomain
 from r2.lib.utils import url_links_builder, make_offset_date, median, to36
 from r2.lib.utils import trunc_time, timesince, timeuntil, weighted_lottery
-from r2.lib.template_helpers import add_sr, get_domain, format_number
+from r2.lib.template_helpers import add_sr, get_domain, format_number, static
 from r2.lib.subreddit_search import popular_searches
 from r2.lib.scraper import get_media_embed
 from r2.lib.log import log_text
+from r2.lib import hooks
 from r2.lib.memoize import memoize
 from r2.lib.utils import trunc_string as _truncate, to_date
 from r2.lib.filters import safemarkdown
@@ -96,6 +98,47 @@ from things import wrap_links, default_thing_wrapper
 datefmt = _force_utf8(_('%d %b %Y'))
 
 MAX_DESCRIPTION_LENGTH = 150
+
+def js_config(extra_config=None):
+    config = {
+        # is the user logged in?
+        "logged": c.user_is_loggedin and c.user.name,
+        # the subreddit's name (for posts)
+        "post_site": c.site.name if not c.default_sr else "",
+        # are we in an iframe?
+        "cnameframe": bool(c.cname and not c.authorized_cname),
+        # the user's voting hash
+        "modhash": c.modhash or False,
+        # the current rendering style
+        "renderstyle": c.render_style,
+        # current domain
+        "cur_domain": get_domain(cname=c.frameless_cname, subreddit=False, no_www=True),
+        # where do ajax requests go?
+        "ajax_domain": get_domain(cname=c.authorized_cname, subreddit=False),
+        "extension": c.extension,
+        "https_endpoint": is_subdomain(request.host, g.domain) and g.https_endpoint,
+        # debugging?
+        "debug": g.debug,
+        "status_msg": {
+          "fetching": _("fetching title..."),
+          "submitting": _("submitting..."),
+          "loading": _("loading...")
+        },
+        "is_fake": isinstance(c.site, FakeSubreddit),
+        "fetch_trackers_url": g.fetch_trackers_url,
+        "adtracker_url": g.adtracker_url,
+        "clicktracker_url": g.clicktracker_url,
+        "uitracker_url": g.uitracker_url,
+        "static_root": static(''),
+        "over_18": bool(c.over18),
+    }
+
+    if extra_config:
+        config.update(extra_config)
+
+    hooks.get_hook("js_config").call(config=config)
+
+    return config
 
 def get_captcha():
     if not c.user_is_loggedin or c.user.needs_captcha():
