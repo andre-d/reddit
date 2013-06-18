@@ -20,11 +20,13 @@
 # Inc. All Rights Reserved.
 ###############################################################################
 
-from r2.models import *
 from filters import unsafe, websafe, _force_unicode, _force_utf8
 from r2.lib.utils import vote_hash, UrlParser, timesince, is_subdomain
 
+from r2.models import FakeSubreddit
+
 from r2.lib import hooks
+from r2.lib.strings import strings
 from r2.lib.static import static_mtime
 from r2.lib.media import s3_direct_url
 from r2.lib import js
@@ -175,17 +177,6 @@ class JSPreload(js.DataSource):
             return js.DataSource.use(self)
         else:
             return ''
-
-
-def class_dict():
-    t_cls = [Link, Comment, Message, Subreddit]
-    l_cls = [Listing, OrganicListing]
-
-    classes  = [('%s: %s') % ('t'+ str(cl._type_id), cl.__name__ ) for cl in t_cls] \
-             + [('%s: %s') % (cl.__name__, cl._js_cls) for cl in l_cls]
-
-    res = ', '.join(classes)
-    return unsafe('{ %s }' % res)
 
 def calc_time_period(comment_time):
     # Set in front.py:GET_comments()
