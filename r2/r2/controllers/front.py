@@ -1136,6 +1136,26 @@ class FrontController(RedditController, OAuth2ResourceController):
     def GET_gold_partners(self):
         return GoldPartnersPage(_("gold partners"), show_sidebar=False).render()
 
+    @validate(VSrModerator(),
+              user=VAccountByName('user'),
+              lite=VBoolean('lite'))
+    def GET_modinfo(self, user, lite):
+        is_moderator = c.site.is_moderator(user)
+        is_contributor = c.site.is_contributor(user)
+        is_moderator_invited = c.site.get_moderator_invite(user)
+        is_banned = c.site.is_banned(user)
+        permissions = is_moderator.get_permissions() if is_moderator else None
+        sr_link_karma = user.karma('link', c.site)
+        sr_comment_karma = user.karma('comment', c.site)
+        return ModInfoPage(user,
+                           permissions,
+                           is_moderator=is_moderator,
+                           is_moderator_invited=is_moderator_invited,
+                           is_contributor=is_contributor,
+                           is_banned=is_banned,
+                           sr_link_karma=sr_link_karma,
+                           sr_comment_karma=sr_comment_karma).render()
+
 
 class FormsController(RedditController):
 
@@ -1447,3 +1467,4 @@ class FormsController(RedditController):
                                                   giftmessage, passthrough,
                                                   comment)
                               ).render()
+

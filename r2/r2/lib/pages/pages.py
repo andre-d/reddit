@@ -2529,7 +2529,7 @@ class WrappedUser(CachedTemplate):
     def __init__(self, user, attribs = [], context_thing = None, gray = False,
                  subreddit = None, force_show_flair = None,
                  flair_template = None, flair_text_editable = False,
-                 include_flair_selector = False):
+                 include_flair_selector = False, no_modinfo=False):
         if not subreddit:
             subreddit = c.site
 
@@ -2578,9 +2578,17 @@ class WrappedUser(CachedTemplate):
             ip_span = getattr(context_thing, 'ip_span', None)
             context_deleted = context_thing.deleted
 
+        show_modinfo = False
+        if c.user_is_loggedin and subreddit.is_moderator(c.user):
+            show_modinfo = True
+
         karma = ''
         if c.user_is_admin:
             karma = ' (%d)' % user.link_karma
+            show_modinfo = True
+        
+        if no_modinfo:
+            show_modinfo = False
 
         CachedTemplate.__init__(self,
                                 name = user.name,
@@ -2598,8 +2606,10 @@ class WrappedUser(CachedTemplate):
                                 attribs = attribs,
                                 context_thing = context_thing,
                                 karma = karma,
+                                show_modinfo = show_modinfo,
                                 ip_span = ip_span,
                                 context_deleted = context_deleted,
+                                subreddit = subreddit.name,
                                 fullname = user._fullname,
                                 user_deleted = user._deleted)
 
@@ -4066,3 +4076,16 @@ class PolicyPage(BoringPage):
                                 base_path='/help')
         toolbars.append(policies_menu)
         return toolbars
+
+class ModInfoPage(BoringPage):
+    def __init__(self, user, permissions, **kw):
+        self.user = user
+        self.wrappeduser = WrappedUser(user, no_modinfo=True)
+        self.permissions = permissions
+        self.is_moderator = kw.pop('is_moderator')
+        self.mod_permission = None
+        if self.is_moderator:
+            self.mod_permission = ModeratorPermissions(self.user,
+                                    "moderator", self.permissions,
+                                    embedded=True)
+        BoringPage.__init__(self, user.name, **kw)

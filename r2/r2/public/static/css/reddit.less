@@ -5207,7 +5207,7 @@ table.calendar {
     border: 1px solid gray;
 }
 
-a.adminbox {
+a.adminbox, a.modinfo {
     border: solid 1px #eeeeee;
     color: #cdcdcd;
     font-family: monospace;
@@ -5215,7 +5215,7 @@ a.adminbox {
     padding-right: 1px;
 }
 
-a.adminbox:hover {
+a.adminbox:hover, a.modinfo:hover {
     text-decoration: none;
     color: orangered;
     border: solid 1px orangered;
@@ -6742,4 +6742,72 @@ body.gold .buttons li.comment-save-button { display: inline; }
     height: 10px;
     margin-left: 5px;
     background-image: url(../pencil-small.png);  /* SPRITE */
+}
+
+.modinfo .permissions {
+    width: auto;
+}
+.modinfo h1 {
+    display: inline-block;
+    margin: 0;
+    margin-bottom: 5px;
+}
+.modinfo .perminfo {
+    padding: 0 3px;
+    margin: 0 3px;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+}
+.modinfo ul li {
+    margin-bottom: 3px;
+    font-size: 12px;
+}
+.modinfo .rel-note {
+    background-color: rgb(225, 225, 255);
+    border-radius: 2px;
+    padding: 2px;
+    margin-left: 3px;
+}
+.modinfo {
+    button {
+        padding: 0 4px;
+        margin: 0;
+        margin-left: 3px;
+        background: rgb(100, 255, 100);
+        border-radius: 4px;
+        border-width: 1px 2px 2px 1px;
+        border-color: rgb(0, 0, 0, .5);
+        color: black;
+    }
+    button:active {
+        border-width: 1px;
+        margin-right: 1px;
+        margin-bottom: 1px;
+        background-color: rgb(100, 205, 100);
+    }
+    button.ban {
+        background: rgb(255, 50, 50);
+        padding: 2px 4px;
+        margin-left: 10px;
+    }
+    button.ban:active {
+        background: rgb(205, 0, 50, .9);
+    }
+    button.remove {
+        background: rgb(255, 200, 50);
+    }
+    button.remove:active {
+        background: rgb(255, 150, 50);
+    }
+}
+.modinfo .relactions {
+    margin-top: 10px;
+    li {
+        display: inline;
+        button {
+            margin: 0;
+            margin-right: 3px;
+            padding: 2px 4px;
+        }
+    }
 }

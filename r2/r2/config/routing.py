@@ -135,7 +135,7 @@ def make_map():
 
     mc('/prefs/:location', controller='forms', action='prefs',
        location='options')
-
+    mc('/modinfo/:user', controller='front', action='modinfo')
     mc('/info/0:article/*rest', controller='front',
        action='oldinfo', dest='comments', type='ancient')
     mc('/info/:article/:dest/:comment', controller='front',
