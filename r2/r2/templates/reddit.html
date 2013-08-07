@@ -81,6 +81,7 @@
 
 <%def name="extra_stylesheets()">
   ${adminbar_stylesheet()}
+  ${less_stylesheet('modcard.less')}
   %for extra_stylesheet in getattr(thing, 'extra_stylesheets', ()):
     ${less_stylesheet(extra_stylesheet)}
   %endfor

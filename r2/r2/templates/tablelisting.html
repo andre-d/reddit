@@ -30,6 +30,10 @@
    cls = thing.lookups[0].__class__.__name__.lower()
  %>
 
+<%def name="noresults()">
+    <p id="noresults" class="error">${_("there doesn't seem to be anything here")}</p>
+</%def>
+
 <style type="text/css">
   .generic-table {
     font-size: small;
@@ -61,5 +65,5 @@
   </p>
 %endif
 %if not thing.things:
-  <p id="noresults" class="error">${_("there doesn't seem to be anything here")}</p>
+  ${self.noresults()}
 %endif

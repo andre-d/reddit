@@ -1,0 +1,33 @@
+<div class="modcard-content flippable-content">
+    <div class="front face">
+        <div class="topbox">
+            <a href="/u/<%- thing.username %>">/u/<%- thing.username %></a>
+            in <a href="/r/<%- thing.subreddit %>">/r/<%- thing.subreddit %></a>
+            <a href="#" class="quit">X</a>
+        </div>
+        <div class="modcard-info"></div>
+        <div class="changer">Changer</div>
+        <div class="actions"><a href="#" class="flipper"><%- thing._.notes %></a></div>
+    </div>
+    <div class="back face">
+        <div class="topbox">
+            <a href="/u/<%- thing.username %>">/u/<%- thing.username %></a>
+            in <a href="/r/<%- thing.subreddit %>">/r/<%- thing.subreddit %></a>
+            <a href="#" class="quit">X</a>
+        </div>
+        <div class="notes">
+            <ul>
+                <li class="addnew"><input type="text" placeholder="add new note"></li>
+                <li><input type="text" value="Totally agree, looks like a total spammer"><a href="/u/test">test</a> &mdash; date</a></li>
+                <li><input type="text" value="Looks like a spammer"><a href="/u/soam">reddit</a> &mdash; date</a></li>
+            </ul>
+        </div>
+        <div class="actions left">
+            <a href="#"><%- thing._.back %></a>
+            <a href="#"><%- thing._.next %></a>
+        </div>
+        <div class="actions">
+            <a href="#" class="flipper"><%- thing._.info %></a>
+        </div>
+    </div>
+</div>

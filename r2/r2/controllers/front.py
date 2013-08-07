@@ -75,6 +75,18 @@ class FrontController(RedditController, OAuth2ResourceController):
         self.check_for_bearer_token()
         RedditController.pre(self)
 
+    @paginated_listing(max_page_size=25, backend='cassandra')
+    @validate(VSrModerator(),
+              user=VAccountByName('user'))
+    def GET_notes(self, num, after, reverse, count, user):
+        notes = ModerationNote.get_notes(c.site, user)
+        builder = ModerationNotesBuilder(
+            notes, num=num, reverse=reverse,
+            count=count, after=after,
+            wrap=default_thing_wrapper())
+        listing = ModerationNoteListing(builder).listing()
+        return ModerationNotesPage(listing).render()
+
     @validate(article=VLink('article'),
               comment=VCommentID('comment'))
     def GET_oldinfo(self, article, type, dest, rest=None, comment=''):

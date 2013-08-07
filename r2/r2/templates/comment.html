@@ -100,7 +100,7 @@ ${parent.collapsed()}
        <em>${_("deleted comment from")}</em>&#32;
      %endif
      ${WrappedUser(thing.author, thing.attribs, thing,
-                   gray = collapse).render()}
+                   gray = collapse, show_modinfo=True).render()}
      &#32;
   %else:
      <em>${_("[deleted]")}</em>&#32;

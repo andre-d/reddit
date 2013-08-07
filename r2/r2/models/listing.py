@@ -11,7 +11,7 @@
 # WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
 # the specific language governing rights and limitations under the License.
 #
-# The Original Code is reddit.
+# The Original Code is reddit.wiki
 #
 # The Original Developer is the Initial Developer.  The Initial Developer of
 # the Original Code is reddit Inc.
@@ -104,6 +104,8 @@ class TableListing(Listing): pass
 class ModActionListing(TableListing): pass
 
 class WikiRevisionListing(TableListing): pass
+
+class ModerationNoteListing(TableListing): pass
 
 class LinkListing(Listing):
     def __init__(self, *a, **kw):

@@ -454,6 +454,9 @@ module["reddit"] = LocalizedModule("reddit.js",
     "gold.js",
     "multi.js",
     PermissionsDataSource(),
+    TemplateFileSource("templates/modcard.html"),
+    TemplateFileSource("templates/modcard-info.html"),
+    "modcard.js"
 )
 
 module["admin"] = Module("admin.js",

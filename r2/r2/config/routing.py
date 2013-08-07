@@ -140,6 +140,8 @@ def make_map():
        connect('/:controller', action='listing',
           requirements=dict(controller="hot|new|rising|randomrising"))
 
+    mc('/about/notes/:user', controller='front', action='notes')
+
     mc('/about/sidebar', controller='front', action='sidebar')
     mc('/about/flair', controller='front', action='flairlisting')
     mc('/about', controller='front', action='about')

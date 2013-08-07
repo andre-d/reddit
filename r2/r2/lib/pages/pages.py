@@ -2585,7 +2585,7 @@ class WrappedUser(CachedTemplate):
     def __init__(self, user, attribs = [], context_thing = None, gray = False,
                  subreddit = None, force_show_flair = None,
                  flair_template = None, flair_text_editable = False,
-                 include_flair_selector = False):
+                 include_flair_selector = False, show_modinfo=False):
         if not subreddit:
             subreddit = c.site
 
@@ -2634,12 +2634,19 @@ class WrappedUser(CachedTemplate):
             ip_span = getattr(context_thing, 'ip_span', None)
             context_deleted = context_thing.deleted
 
+        show_modinfo = bool(show_modinfo and (
+            (c.user_is_loggedin and subreddit.is_moderator(c.user))
+            or c.user_is_admin
+        ))
+
         karma = ''
         if c.user_is_admin:
             karma = ' (%d)' % user.link_karma
 
         CachedTemplate.__init__(self,
                                 name = user.name,
+                                show_modinfo = show_modinfo,
+                                subreddit = subreddit.name,
                                 force_show_flair = force_show_flair,
                                 has_flair = has_flair,
                                 flair_enabled = flair_enabled,
@@ -4227,3 +4234,7 @@ class SubredditSelector(Templated):
             names.sort(key=str.lower)
             groups.append((title, names))
         return groups
+
+class ModerationNotesPage(BoringPage):
+    def __init__(self, listing):
+        BoringPage.__init__(self, pagename="hi", content=listing)

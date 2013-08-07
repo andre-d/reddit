@@ -608,6 +608,18 @@ class SearchBuilder(IDBuilder):
         else:
             return True
 
+class ModerationNotesBuilder(QueryBuilder):
+    def wrap_items(self, items):
+        types = {}
+        wrapped = []
+        for item in items:
+            w = self.wrap(item)
+            types.setdefault(w.render_class, []).append(w)
+            wrapped.append(w)
+        for cls in types.keys():
+            cls.add_props(user, types[cls])
+        return wrapped
+
 class WikiRevisionBuilder(QueryBuilder):
     show_extended = True
     
@@ -621,7 +633,6 @@ class WikiRevisionBuilder(QueryBuilder):
         wrapped = []
         for item in items:
             w = self.wrap(item)
-            w.show_extended = self.show_extended
             types.setdefault(w.render_class, []).append(w)
             wrapped.append(w)
         

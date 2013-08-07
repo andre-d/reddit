@@ -1,0 +1,180 @@
+// flipping related stuff
+@fliptime: 100ms;
+@fliptype: ease;
+.flippable {
+    position: relative;
+    z-index: 1;
+    .flippable-content {
+        width: 100%;
+        height: 100%;
+        transform-style: preserve-3d;
+        -webkit-transform-style: preserve-3d;
+        -moz-transform-style: preserve-3d;
+        transition: all @fliptime @fliptype;
+        .face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            -moz-backface-visibility: hidden;
+            box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            transition: z-index @fliptime @fliptype;
+            -ms-transition: none;
+        }
+        .face.front {
+            z-index: 101;
+        }
+        .face.back {
+            z-index: 100;
+            transform: rotateY(180deg);
+            -webkit-transform: rotateY(180deg);
+            -moz-transform: rotateY(180deg);
+            -ms-transform: none;
+        }
+    }
+    &.flipped {
+        .face.front {
+            z-index: 100;
+        }
+        .face.back {
+            z-index: 101;
+        }
+        .flippable-content {
+            transform: rotateY(180deg);
+            -webkit-transform: rotateY(180deg);
+            -moz-transform: rotateY(180deg);
+            -ms-transform: none;
+        }
+    }
+}
+
+// Style related stuf
+.modcard {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 370px;
+    height: 215px;
+    .face {
+        overflow: hidden;
+        .topbox {
+            border-bottom: 1px dashed #d0d0d8;
+            margin-bottom: 3px;
+            .quit {
+                position: absolute;
+                top: 2px;
+                right: 15px;
+                padding: 0 2px;
+                color: #a6a6b5;
+                &:hover {
+                    color: #58626a;
+                }
+            }
+        }
+        .actions {
+            position: absolute;
+            bottom: 10px;
+            right: 5px;
+            a {
+                font-size: 150%;
+                padding: 5px;
+                color: #a6a6b5;
+                border: 1px dashed #a6a6b5;
+                font-weight: bold;
+                &:hover {
+                    color: #7c8892;
+                    border: 1px dashed #7c8892;
+                }
+            }
+            &.left {
+                left: 10px;
+            }
+        }
+        border-radius: 15px;
+        border: 5px solid #e1e1ff;
+        background-color: #e6e6ff;
+        padding: 15px;
+        padding-top: 5px;
+    }
+    .modcard-info {
+        height: 100%;
+        .infoportion {
+            height: 100%;
+            .leftbox {
+                display: inline-block;
+                margin-right: 15px;
+                text-align: center;
+                vertical-align: top;
+                width: 128px;
+            }
+            .snooimg {
+                display: block;
+                width: 128px;
+                height: 128px;
+                background-image: url(../snoohead.png); /* SPRITE */
+                background-repeat: no-repeat;
+                margin-bottom: 15px;
+            }
+            h2 {
+                margin: 0;
+                color: #9696C8;
+                font-weight: bold;
+                font-size: 14px;
+                margin-right: 40px;
+            }
+            .rightbox {
+                display: inline-block;
+                dl {
+                    width: 100%;
+                }
+                dt {
+                    width: 75%;
+                    float: left;
+                }
+                dd {
+                    text-align: right;
+                }
+                dl, dd, dt {
+                    margin: 0;
+                    padding: 0;
+                }
+                h2 {
+                    margin-bottom: 3px;
+                }
+            }
+        }
+    }
+    .notes ul {
+        margin-top: 5px;
+        li {
+            &:hover {
+                background-color: #d0d0d8;
+            }
+            padding: 2px;
+            font-size: 11px;
+            color: rgb(136, 136, 136);
+            border-bottom: 1px #d0d0d8 dashed;
+            input {
+                color: inherit;
+                font-size: 11px;
+                display: block;
+                width: 100%;
+                background-color: inherit;
+                border: none;
+                &:focus {
+                    font-style: normal;
+                }
+            }
+            &.addnew {
+                input {
+                    font-size: 10px;
+                    font-style: italic;
+                }
+            }
+        }
+    }
+}

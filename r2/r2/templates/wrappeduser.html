@@ -86,6 +86,14 @@
       ]
     %endif
     </span>
+    %if thing.show_modinfo:
+      %if thing.attribs:
+          &#32;
+      %endif
+      <a class="modcarder" data-username="${thing.name}"
+         data-subreddit="${thing.subreddit}"
+         title="${_('moderation info')}" href="#">m</a>
+    %endif
   %endif
 %endif
 

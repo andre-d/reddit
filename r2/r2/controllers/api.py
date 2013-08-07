@@ -3485,3 +3485,39 @@ class ApiController(RedditController, OAuth2ResourceController):
             giftmessage=None,
             comment=comment._fullname,
         ))
+
+    @json_validate(VSrModerator(),
+                   user=VAccountByName('user'))
+    def GET_userinfo(self, responder, user):
+        if not user or isinstance(c.site, DefaultSR):
+            self.abort404()
+        is_moderator = c.site.is_moderator(user)
+        is_moderator_invited = c.site.get_moderator_invite(user)
+        is_banned = c.site.is_banned(user)
+        is_contributor = c.site.is_contributor(user)
+        permissions = None
+        user_type = 'regular'
+        if is_banned:
+            user_type = 'banned'
+        if is_moderator:
+            user_type = 'moderator'
+        elif is_moderator_invited:
+            user_type = 'invited_moderator'
+        elif is_contributor:
+            user_type = 'contributor'
+        if is_moderator or is_moderator_invited:
+            rel = (is_moderator or is_moderator_invited)
+            permissions = rel.get_permissions().iteritems()
+            permissions = [perm for perm, has in permissions if has]
+        return dict(
+            userinfo = dict(
+                is_moderator = bool(is_moderator),
+                is_contributor = bool(is_contributor),
+                is_moderator_invited = bool(is_moderator_invited),
+                is_banned = bool(is_banned),
+                mod_permissons = permissions,
+                sr_link_karma = user.karma('link', c.site),
+                sr_comment_karma = user.karma('comment', c.site),
+                user_type = user_type
+            )
+        )
