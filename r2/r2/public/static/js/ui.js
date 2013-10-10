@@ -319,14 +319,14 @@ r.ui.Bubble = Backbone.View.extend({
         }
     },
 
-    queueShow: function() {
+    queueShow: function(callback) {
         this.cancelTimeout()
-        this.timeout = setTimeout($.proxy(this, 'show'), this.showDelay)
+        this.timeout = setTimeout($.proxy(this, 'show', callback), this.showDelay)
     },
 
-    queueHide: function() {
+    queueHide: function(callback) {
         this.cancelTimeout()
-        this.timeout = setTimeout($.proxy(this, 'hide'), this.hideDelay)
+        this.timeout = setTimeout($.proxy(this, 'hide', callback), this.hideDelay)
     }
 })
 

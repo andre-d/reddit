@@ -43,6 +43,9 @@
     }
 
     var saves = ${unsafe(simplejson.dumps(list(thing.saves)))};
-    $.map(saves, show_saved);
+    $(function() {
+        var handler = _.bind(r.saved.SaveButton.setSavedFullname, r.saved.SaveButton);
+        $.map(saves, handler);
+    })
   })()
 </script>

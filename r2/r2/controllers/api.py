@@ -2362,11 +2362,28 @@ class ApiController(RedditController, OAuth2ResourceController):
             ModAction.create(sr, c.user, 'distinguish', target=thing, **log_kw)
 
     @require_oauth2_scope("save")
+    @json_validate(VUser())
+    @api_doc(api_section.links_and_comments, extensions=["json"])
+    def GET_savedcategories(self, responder):
+        """Get a list of categories in which things are currently saved.
+
+        See also: [/api/save](#POST_api_save).
+
+        """
+        if not c.user.gold:
+            abort(404)
+        categories = LinkSavesByCategory.get_saved_categories(c.user)
+        categories += CommentSavesByCategory.get_saved_categories(c.user)
+        categories = [dict(category=category) for category in set(categories)]
+        return {'categories': categories}
+
+    @require_oauth2_scope("save")
     @noresponse(VUser(),
                 VModhash(),
+                category = VSavedCategory('category'),
                 thing = VByName('id'))
     @api_doc(api_section.links_and_comments)
-    def POST_save(self, thing):
+    def POST_save(self, thing, category):
         """Save a link or comment.
 
         Saved things are kept in the user's saved listing for later perusal.
@@ -2376,7 +2393,11 @@ class ApiController(RedditController, OAuth2ResourceController):
         """
         if not thing: return
         if isinstance(thing, Comment) and not c.user.gold: return
-        r = thing._save(c.user)
+        if category and not c.user.gold:
+            category = None
+        if ('BAD_SAVE_CATEGORY', 'category') in c.errors:
+            abort(403)
+        r = thing._save(c.user, category=category)
 
     @require_oauth2_scope("save")
     @noresponse(VUser(),
@@ -2615,6 +2636,7 @@ class ApiController(RedditController, OAuth2ResourceController):
 
                 if pv_hex:
                     jquery.rehighlight_new_comments()
+                jquery.init_new_comment_saves()
         finally:
             if lock:
                 lock.release()

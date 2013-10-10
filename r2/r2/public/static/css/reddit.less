@@ -8020,6 +8020,9 @@ body.with-listing-chooser {
         color: #777;
         text-align: right;
         padding: 4px;
+        &.gold {
+            color: #9a7d2e;
+        }
     }
 
     .intro {
@@ -8060,7 +8063,7 @@ body.with-listing-chooser {
         margin-top: 10px;
     }
 
-    ul.multis {
+    ul.multis, ul.saved {
         li {
             margin-left: 12px;
             .transition(all, 0.15s);
@@ -8243,4 +8246,8 @@ body.with-listing-chooser {
     &.enabled {
         display: inline-block;
     }
+}
+
+.hover-bubble.save-selector  {
+    display: none;
 }

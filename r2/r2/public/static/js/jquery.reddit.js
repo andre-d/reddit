@@ -693,6 +693,10 @@ $.rehighlight_new_comments = function() {
   }
 }
 
+$.init_new_comment_saves = function() {
+    r.saved.init()
+}
+
 /* namespace globals for cookies -- default prefix and domain */
 var default_cookie_domain
 $.default_cookie_domain = function(domain) {

@@ -656,6 +656,25 @@ class VSelfText(VMarkdown):
 
     max_length = property(get_max_length, set_max_length)
 
+
+class VSavedCategory(Validator):
+    savedcategory_rx = re.compile(r"\A[A-Za-z0-9_]{1,20}\Z")
+
+    def run(self, name):
+        if not name:
+            return
+        valid = self.savedcategory_rx.match(name)
+        if not valid:
+            self.set_error('BAD_SAVE_CATEGORY')
+            return
+        return name
+
+    def param_docs(self):
+        return {
+            self.param: "a category name",
+        }
+
+
 class VSubredditName(VRequired):
     def __init__(self, item, allow_language_srs=False, *a, **kw):
         VRequired.__init__(self, item, errors.BAD_SR_NAME, *a, **kw)
