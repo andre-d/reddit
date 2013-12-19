@@ -35,8 +35,6 @@ from r2.lib import s3cp
 
 from r2.lib.media import upload_media
 
-from r2.lib.template_helpers import s3_https_if_secure
-
 import re
 from urlparse import urlparse
 
@@ -49,44 +47,61 @@ msgs = string_dict['css_validator_messages']
 
 browser_prefixes = ['o','moz','webkit','ms','khtml','apple','xv']
 
+import logging
+cssutils.log.setLevel(logging.FATAL)
+
 custom_macros = {
+    # Gradients are missing from cssutils
     'bg-gradient': r'none|{color}|[a-z-]*-gradient\([^;]*\)',
     'bg-gradients': r'{bg-gradient}(?:,\s*{bg-gradient})*',
-
-    'single-text-shadow': r'({color}\s+)?{length}\s+{length}(\s+{length})?|{length}\s+{length}(\s+{length})?(\s+{color})?',
-    'box-shadow-pos': r'{length}\s+{length}(\s+{length})?(\s+{length})?',
+    'background-image': r'{bg-gradients}|{uri}|none|inherit',
+    # Allow length length length length on all border usage
+    'border-width': r'{length}(\s+{length}){0,3}|inherit|thick|thin|medium',
+    # uicolor not included in css3 color marco in cssutils
+    'color': r'{uicolor}|{namedcolor}|{hexcolor}|{rgbcolor}|{rgbacolor}|{hslcolor}|{x11color}|inherit',
+    # Cssutils does not allow color at start
+    'shadow': '{color}?{w}(inset)?{w}{length}{w}{length}{w}{length}?{w}{length}?{w}{color}?',
+    # text-overflow possible values
+    'text-overflow': 'clip|ellipsis|inherit|{string}',
+    # border-radius-* missing inherit
+    'border-radius-part': 'inherit|(({length}|{percentage})(\s+({length}|{percentage}))?)'
 }
 
-custom_macros = dict(   #re-use macros from the library
-    custom_macros.items() +
+custom_macros = dict(
     cssutils.profile._TOKEN_MACROS.items() +
     cssutils.profile._MACROS.items() +
-    cssutils.profiles.macros[cssutils.profile.CSS3_BACKGROUNDS_AND_BORDERS].items() +
-    cssutils.profiles.macros[cssutils.profile.CSS3_COLOR].items()
+    cssutils.profiles.macros[cssutils.profile.CSS3_COLOR].items() +
+    custom_macros.items()
 )
 
 custom_values = {
+    # IE6 hack
     '_height': r'{length}|{percentage}|auto|inherit',
     '_width': r'{length}|{percentage}|auto|inherit',
     '_overflow': r'visible|hidden|scroll|auto|inherit',
 
-    'filter': r'alpha\(opacity={num}\)',
-    
-    'background': r'{bg-gradients}',
-    'background-image': r'{bg-gradients}',
+    # text-overflow went missing from cssutils
+    'text-overflow': r'{text-overflow}|{text-overflow}{w}{text-overflow}',
 
-    # http://www.w3.org/TR/css3-text/#text-shadow
-    'text-shadow': r'none|inherit|({single-text-shadow}{w},{w})*{single-text-shadow}',
-    
-    # http://www.w3.org/TR/css3-background/#the-box-shadow
-    # (This description doesn't support multiple shadows)
-    'box-shadow': 'none|inherit|(?:({box-shadow-pos}\s+)?{color}|({color}\s+?){box-shadow-pos})',
+    # IE filter opacity
+    'filter': r'alpha\(opacity={num}\)',
     
     # old mozilla style (for compatibility with existing stylesheets)
     'border-radius-topright': r'{border-radius-part}',
     'border-radius-bottomright': r'{border-radius-part}',
     'border-radius-bottomleft': r'{border-radius-part}',
     'border-radius-topleft': r'{border-radius-part}',
+
+    # Cssutils does not allow width width width width in border rule,
+    # moved into macro.
+    'border-width': r'{border-width}',
+
+    # border-radius missing inherit
+    'border-radius': 'inherit|(({length}{w}|{percentage}{w}){1,4}(/{w}({length}{w}|{percentage}{w}){1,4})?)',
+
+    # cssutils is missing text-shadow and box-shadow inherit
+    'text-shadow':  'inherit|none|{shadow}({w},{w}{shadow})*',
+    'box-shadow':  'inherit|none|{shadow}({w},{w}{shadow})*'
 }
 
 reddit_profile = "reddit compat"
@@ -99,6 +114,8 @@ def _build_regex_prefix(prefixes):
 prefix_regex = _build_regex_prefix(browser_prefixes)
 
 cssutils.profile._compile_regexes(cssutils.profile._expand_macros(custom_values,custom_macros))
+
+valid_props = set(cssutils.profile.propertiesByProfile(cssutils.profile.defaultProfiles))
 
 class ValidationReport(object):
     def __init__(self, original_text=''):
@@ -133,6 +150,8 @@ class ValidationError(Exception):
             return -1
         elif hasattr(other,'line') and not hasattr(self,'line'):
             return 1
+        elif not hasattr(other, 'line') and not hasattr(self, 'line'):
+            return 0
         else:
             return cmp(self.line,other.line)
 
@@ -144,12 +163,10 @@ class ValidationError(Exception):
         obj = str(self.obj) if hasattr(self,'obj') else ''
         return "ValidationError%s: %s (%s)" % (line, self.message, obj)
 
-# local urls should be in the static directory
-local_urls = re.compile(r'\A/static/[a-z./-]+\Z')
 # substitutable urls will be css-valid labels surrounded by "%%"
 custom_img_urls = re.compile(r'%%([a-zA-Z0-9\-]+)%%')
-valid_url_schemes = ('http', 'https')
-def valid_url(prop,value,report):
+def valid_url(prop, value, report, generate_https_urls):
+    return
     """
     checks url(...) arguments in CSS, ensuring that the contents are
     officially sanctioned.  Sanctioned urls include:
@@ -218,8 +235,8 @@ def strip_browser_prefix(prop):
 
 error_message_extract_re = re.compile('.*\\[([0-9]+):[0-9]*:.*\\]\Z')
 only_whitespace          = re.compile('\A\s*\Z')
-def validate_css(string):
-    p = CSSParser(raiseExceptions = True)
+def validate_css(string, generate_https_urls):
+    p = CSSParser(raiseExceptions=True)
 
     if not string or only_whitespace.match(string):
         return ('',ValidationReport())
@@ -242,9 +259,9 @@ def validate_css(string):
         # yuck; xml.dom.DOMException can't give us line-information
         # directly, so we have to parse its error message string to
         # get it
-        line = None
+        line = getattr(e, 'line', None)
         line_match = error_message_extract_re.match(e.args[0])
-        if line_match:
+        if not line and line_match:
             line = line_match.group(1)
             if line:
                 line = int(line)
@@ -264,8 +281,9 @@ def validate_css(string):
 
                 prop.name = strip_browser_prefix(prop.name)
                 # check property name
-                if not prop.name in cssutils.profile.propertiesByProfile(cssutils.profile.defaultProfiles): #TODO would populating an array at module init be faster?
-                    report.append(ValidationError('invalid property',prop))
+                if not prop.name in valid_props:
+                    error = msgs['invalid_property'] % dict(cssprop = prop.name)
+                    report.append(ValidationError(error, prop))
                     continue
 
                 # check property values
@@ -277,42 +295,33 @@ def validate_css(string):
                 # Unlike above, we need to iterate over every value in the line
                 for v in prop.propertyValue:
                     if v.type == cssutils.css.Value.URI:
-                        valid_url(prop,v,report)
+                        valid_url(prop, v, report, generate_https_urls)
 
         else:
             report.append(ValidationError(msgs['unknown_rule_type']
                                           % dict(ruletype = rule.cssText),
                                           rule))
 
-    return parsed,report
+    return parsed.cssText if parsed else "", report
 
 def find_preview_comments(sr):
-    if g.use_query_cache:
-        from r2.lib.db.queries import get_sr_comments, get_all_comments
+    from r2.lib.db.queries import get_sr_comments, get_all_comments
 
-        comments = get_sr_comments(c.site)
+    comments = get_sr_comments(sr)
+    comments = list(comments)
+    if not comments:
+        comments = get_all_comments()
         comments = list(comments)
-        if not comments:
-            comments = get_all_comments()
-            comments = list(comments)
 
-        return Thing._by_fullname(comments[:25], data=True, return_dict=False)
-    else:
-        comments = Comment._query(Comment.c.sr_id == c.site._id,
-                                  limit=25, data=True)
-        comments = list(comments)
-        if not comments:
-            comments = Comment._query(limit=25, data=True)
-            comments = list(comments)
-    return comments
+    return Thing._by_fullname(comments[:25], data=True, return_dict=False)
 
 def find_preview_links(sr):
-    from r2.lib.normalized_hot import get_hot
+    from r2.lib.normalized_hot import normalized_hot
 
     # try to find a link to use, otherwise give up and return
-    links = get_hot([c.site])
+    links = normalized_hot([sr._id])
     if not links:
-        links = get_hot(Subreddit.default_subreddits(ids=False))
+        links = normalized_hot(Subreddit.default_subreddits())
 
     if links:
         links = links[:25]
@@ -320,12 +329,16 @@ def find_preview_links(sr):
 
     return links
 
-def rendered_link(links, media, compress):
+def rendered_link(links, media, compress, stickied=False):
     with c.user.safe_set_attr:
         c.user.pref_compress = compress
         c.user.pref_media    = media
-        links = wrap_links(links, show_nums = True, num = 1)
-        return links.render(style = "html")
+    links = wrap_links(links, show_nums = True, num = 1)
+    for wrapped in links:
+        wrapped.stickied = stickied
+    delattr(c.user, 'pref_compress')
+    delattr(c.user, 'pref_media') 
+    return links.render(style = "html")
 
 def rendered_comment(comments):
     return wrap_links(comments, num = 1).render(style = "html")
